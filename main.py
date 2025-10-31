@@ -1,30 +1,32 @@
-import json
 from pathlib import Path
 
-import polars as pl
+import pandas as pd
 
+from match import Match
 from settings import MATCH_DATA_DIR, MATCH_INDEX
 
 
-def main():
+def load_data():
     print(f"Reading match data from: {MATCH_DATA_DIR}")
 
     index_path = Path(MATCH_DATA_DIR) / MATCH_INDEX
-    matches = pl.read_csv(index_path, try_parse_dates=True)
+    matches_info = pd.read_csv(index_path)
+    matches = {}
 
-    for json_file in matches["JSON file name"]:
-        if not isinstance(json_file, str):
+    for _, row in matches_info.iterrows():
+        if row["Coded?"] != "Yes":
             continue
-        match_path = Path(MATCH_DATA_DIR) / json_file
-        with open(match_path, "r") as f:
-            match_data = json.load(f)
 
-            # Placeholder
-            num_events = len(match_data.get("Events", []))
-            print(f"Match: {json_file}, Number of events: {num_events}")
+        match = Match(row["JSON file name"])
+        match.load_data()
+        match.extract_events()
+        matches[row["Name"]] = match
 
-    print(matches)
+    print(matches["Old Loughts (A)"].event_types)
+    df = matches["Old Loughts (A)"].events
+
+    print(df)
 
 
 if __name__ == "__main__":
-    main()
+    load_data()
