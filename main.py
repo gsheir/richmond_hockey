@@ -20,12 +20,8 @@ def load_data():
         match = Match(row["JSON file name"])
         match.load_data()
         match.extract_events()
+        match.count_stats()
         matches[row["Name"]] = match
-
-    print(matches["Old Loughts (A)"].event_types)
-    df = matches["Old Loughts (A)"].events
-
-    print(df)
 
 
 if __name__ == "__main__":
