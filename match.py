@@ -70,4 +70,220 @@ class Match:
             .rename(columns={"index": "EventType"})
         )
 
+        # Extract detailed stats
+        self._extract_quarters()
+        self._extract_for_against_stats()
+        self._extract_penalty_corner_stats()
+        self._extract_circle_entry_stats()
+        self._extract_goals()
+
         print(f"Stats for {self.json_file}: {self.stats}")
+
+    def _extract_quarters(self):
+        """Extract quarter boundaries from Quarter Start events"""
+        quarter_events = self.events[
+            self.events["EventType"].str.contains("Quarter", case=False, na=False)
+        ].sort_values("StartTimeMs")
+
+        self.stats["quarters"] = {}
+
+        if len(quarter_events) != 4:
+            # Quarter markers invalid, treat all as Q1
+            self.stats["quarters"]["Q1"] = self.events
+            self.stats["quarters"]["Q2"] = pd.DataFrame()
+            self.stats["quarters"]["Q3"] = pd.DataFrame()
+            self.stats["quarters"]["Q4"] = pd.DataFrame()
+            return
+
+        quarter_times = quarter_events["StartTimeMs"].tolist()
+
+        # Q1, Q2, Q3: between quarter starts
+        for i in range(0, 3):
+            start_time = quarter_times[i]
+            end_time = quarter_times[i + 1]
+            quarter_events_df = self.events[
+                (self.events["StartTimeMs"] >= start_time)
+                & (self.events["StartTimeMs"] < end_time)
+            ]
+            self.stats["quarters"][f"Q{i + 1}"] = quarter_events_df
+
+        # Q4: from last quarter start to end
+        start_time = quarter_times[3]
+        end_time = self.events["StartTimeMs"].max()
+        quarter_events_df = self.events[
+            (self.events["StartTimeMs"] >= start_time)
+            & (self.events["StartTimeMs"] < end_time)
+        ]
+        self.stats["quarters"]["Q4"] = quarter_events_df
+
+    def _extract_for_against_stats(self):
+        """Separate events into FOR (ATT) and AGAINST (DEF) based on event type"""
+        self.stats["for_events"] = self.events[
+            self.events["EventType"].str.contains("ATT", case=False, na=False)
+        ]
+        self.stats["against_events"] = self.events[
+            self.events["EventType"].str.contains("DEF", case=False, na=False)
+        ]
+
+        # Count by quarter
+        self.stats["for_by_quarter"] = {}
+        self.stats["against_by_quarter"] = {}
+
+        for quarter in ["Q1", "Q2", "Q3", "Q4"]:
+            if (
+                quarter in self.stats["quarters"]
+                and not self.stats["quarters"][quarter].empty
+            ):
+                q_events = self.stats["quarters"][quarter]
+                self.stats["for_by_quarter"][quarter] = len(
+                    q_events[
+                        q_events["EventType"].str.contains("ATT", case=False, na=False)
+                    ]
+                )
+                self.stats["against_by_quarter"][quarter] = len(
+                    q_events[
+                        q_events["EventType"].str.contains("DEF", case=False, na=False)
+                    ]
+                )
+            else:
+                self.stats["for_by_quarter"][quarter] = 0
+                self.stats["against_by_quarter"][quarter] = 0
+
+    def _extract_penalty_corner_stats(self):
+        """Extract penalty corner outcomes"""
+        pc_att = self.events[
+            self.events["EventType"].str.contains("PCA", case=False, na=False)
+        ]
+        pc_def = self.events[
+            self.events["EventType"].str.contains("PCD", case=False, na=False)
+        ]
+
+        # Helper function to safely count tags
+        def count_tag(df, tag):
+            if tag in df.columns:
+                return len(df[df[tag] == True])
+            return 0
+
+        # PCA stats
+        self.stats["pca"] = {
+            "total": len(pc_att),
+            "goal": count_tag(pc_att, "Goal"),
+            "ph2_goal": count_tag(pc_att, "Ph2 Goal"),
+            "reawarded": count_tag(pc_att, "Reawarded"),
+            "saved": count_tag(pc_att, "Saved"),
+            "recycled": count_tag(pc_att, "Recycled"),
+            "miss": count_tag(pc_att, "Miss"),
+            "turnover": count_tag(pc_att, "Turnover"),
+            "left": count_tag(pc_att, "Left"),
+            "right": count_tag(pc_att, "Right"),
+            "straight": count_tag(pc_att, "Straight"),
+            "variation": count_tag(pc_att, "Variation"),
+        }
+
+        # PCD stats
+        self.stats["pcd"] = {
+            "total": len(pc_def),
+            "goal": count_tag(pc_def, "Goal"),
+            "ph2_goal": count_tag(pc_def, "Ph2 Goal"),
+            "reawarded": count_tag(pc_def, "Reawarded"),
+            "saved": count_tag(pc_def, "Saved"),
+            "recycled": count_tag(pc_def, "Recycled"),
+            "miss": count_tag(pc_def, "Miss"),
+            "turnover": count_tag(pc_def, "Turnover"),
+            "left": count_tag(pc_def, "Left"),
+            "right": count_tag(pc_def, "Right"),
+            "straight": count_tag(pc_def, "Straight"),
+            "variation": count_tag(pc_def, "Variation"),
+        }
+
+    def _extract_circle_entry_stats(self):
+        """Extract circle entry outcomes and positions"""
+        circle_att = self.events[
+            self.events["EventType"].str.contains(
+                "Circle Entry ATT", case=False, na=False
+            )
+        ]
+        circle_def = self.events[
+            self.events["EventType"].str.contains(
+                "Circle Entry DEF", case=False, na=False
+            )
+        ]
+
+        # Helper function to safely count tags
+        def count_tag(df, tag):
+            if tag in df.columns:
+                return len(df[df[tag] == True])
+            return 0
+
+        # Circle ATT stats
+        self.stats["circle_att"] = {
+            "total": len(circle_att),
+            "goal": count_tag(circle_att, "Goal"),
+            "upgrade": count_tag(circle_att, "Upgrade"),
+            "saved": count_tag(circle_att, "Saved"),
+            "recycled": count_tag(circle_att, "Recycled"),
+            "miss": count_tag(circle_att, "Miss"),
+            "turnover": count_tag(circle_att, "Turnover"),
+            # Positions (left to right: left baseline, l45, central, r45, right baseline)
+            "left_baseline": count_tag(circle_att, "Left Baseline"),
+            "l45": count_tag(circle_att, "L45"),
+            "centre": count_tag(circle_att, "Centre"),
+            "r45": count_tag(circle_att, "R45"),
+            "right_baseline": count_tag(circle_att, "Right Baseline"),
+        }
+
+        # Circle DEF stats
+        self.stats["circle_def"] = {
+            "total": len(circle_def),
+            "goal": count_tag(circle_def, "Goal"),
+            "upgrade": count_tag(circle_def, "Upgrade"),
+            "saved": count_tag(circle_def, "Saved"),
+            "recycled": count_tag(circle_def, "Recycled"),
+            "miss": count_tag(circle_def, "Miss"),
+            "turnover": count_tag(circle_def, "Turnover"),
+            # Positions
+            "left_baseline": count_tag(circle_def, "Left Baseline"),
+            "l45": count_tag(circle_def, "L45"),
+            "centre": count_tag(circle_def, "Centre"),
+            "r45": count_tag(circle_def, "R45"),
+            "right_baseline": count_tag(circle_def, "Right Baseline"),
+        }
+
+    def _extract_goals(self):
+        """Extract goal counts by quarter"""
+        self.stats["goals_by_quarter"] = {"for": {}, "against": {}}
+
+        # Get goal events
+        for_goals = self.events[
+            self.events["EventType"].str.contains("Goal FOR", case=False, na=False)
+        ]
+        against_goals = self.events[
+            self.events["EventType"].str.contains("Goal AGAINST", case=False, na=False)
+        ]
+
+        for quarter in ["Q1", "Q2", "Q3", "Q4"]:
+            if (
+                quarter in self.stats["quarters"]
+                and not self.stats["quarters"][quarter].empty
+            ):
+                q_events = self.stats["quarters"][quarter]
+                start_time = q_events["StartTimeMs"].min()
+                end_time = q_events["StartTimeMs"].max()
+
+                # Count goals in this quarter's time range
+                q_for_goals = for_goals[
+                    (for_goals["StartTimeMs"] >= start_time)
+                    & (for_goals["StartTimeMs"] <= end_time)
+                ]
+                q_against_goals = against_goals[
+                    (against_goals["StartTimeMs"] >= start_time)
+                    & (against_goals["StartTimeMs"] <= end_time)
+                ]
+
+                self.stats["goals_by_quarter"]["for"][quarter] = len(q_for_goals)
+                self.stats["goals_by_quarter"]["against"][quarter] = len(
+                    q_against_goals
+                )
+            else:
+                self.stats["goals_by_quarter"]["for"][quarter] = 0
+                self.stats["goals_by_quarter"]["against"][quarter] = 0
