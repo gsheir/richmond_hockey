@@ -9,6 +9,8 @@ from settings import (
     BOX_DIMENSIONS,
     CANVAS_LEFT,
     CANVAS_RIGHT,
+    CIRCLE_HEIGHT,
+    CIRCLE_WIDTH,
     COLOURS,
     ELEMENT_COORDINATES,
     FIG_SIZE,
@@ -66,7 +68,7 @@ def create_dashboard(match, team_name="Richmond M1", opponent_name="Opponent"):
     _add_overall_stats(fig, match)
     _add_quarter_stats_tables(fig, match)
     _add_pca_pcd(fig, match.stats)
-    # _add_circle_entries(fig, match.stats)
+    _add_circle_entries(fig, match.stats)
 
     return fig
 
@@ -76,7 +78,7 @@ def _add_result_box(fig, for_score, against_score):
     ax = fig.add_axes(ELEMENT_COORDINATES["result_position"])
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    # ax.axis("off")
+    ax.axis("off")
 
     # Result box with border
     rect = FancyBboxPatch(
@@ -117,7 +119,7 @@ def _add_period_scores(fig, goals_by_quarter):
     ax = fig.add_axes(ELEMENT_COORDINATES["period_scores_position"])
     ax.set_xlim(0, 4)
     ax.set_ylim(0, 3)
-    # ax.axis("off")
+    ax.axis("off")
 
     # Black background for title
     title_rect = Rectangle((0, 1), 4, 2, facecolor=COLOURS["Black"], edgecolor="none")
@@ -190,7 +192,7 @@ def _add_overall_stats(fig, match):
     ax = fig.add_axes(ELEMENT_COORDINATES["overall_stats_position"])
     ax.set_xlim(0, 5)
     ax.set_ylim(0, 7)
-    # ax.axis("off")
+    ax.axis("off")
 
     # Black background
     title_rect = Rectangle((0, 0), 5, 7, facecolor=COLOURS["Black"], edgecolor="none")
@@ -347,7 +349,7 @@ def _add_single_quarter_stats_table(fig, match, is_for=True):
 
     ax.set_xlim(0, 4)
     ax.set_ylim(0, 5)
-    # ax_for.axis("off")
+    ax.axis("off")
 
     # Black background for FOR title
     title_rect = Rectangle((0, 4), 5, 1, facecolor=COLOURS["Black"], edgecolor="none")
@@ -521,7 +523,7 @@ def _add_pc_section(fig, pc_stats, position, title):
     ax = fig.add_axes(position)
     ax.set_xlim(0, PC_WIDTH)
     ax.set_ylim(0, PC_HEIGHT)
-    # ax.axis("off")
+    ax.axis("off")
 
     # Add pitch image as background
     pitch_path = Path("images/black_tquarter.jpg")
@@ -535,7 +537,7 @@ def _add_pc_section(fig, pc_stats, position, title):
         PC_WIDTH,
         PC_HEIGHT,
         facecolor="none",
-        edgecolor=COLOURS["White"],
+        edgecolor=COLOURS["Black"],
         linewidth=LINE_WIDTHS["thick"],
     )
     ax.add_patch(rect)
@@ -644,45 +646,63 @@ def _add_pc_section(fig, pc_stats, position, title):
 def _add_circle_entries(fig, stats):
     """Add circle entry attack and defense sections"""
     # Circle ATT
-    _add_circle_section(fig, stats["circle_att"], 0.38, 0.08, "CIRCLE ATT")
+    _add_circle_section(
+        fig,
+        stats["circle_att"],
+        ELEMENT_COORDINATES["circle_att_position"],
+        "CIRCLE ATT",
+    )
     # Circle DEF
-    _add_circle_section(fig, stats["circle_def"], 0.61, 0.08, "CIRCLE DEF")
+    _add_circle_section(
+        fig,
+        stats["circle_def"],
+        ELEMENT_COORDINATES["circle_def_position"],
+        "CIRCLE DEF",
+    )
 
 
-def _add_circle_section(fig, circle_stats, x_pos, y_pos, title):
+def _add_circle_section(fig, circle_stats, position, title):
     """Add a circle entry section (ATT or DEF)"""
-    ax = fig.add_axes([x_pos, y_pos, 0.21, 0.35])
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 14)
+    ax = fig.add_axes(position)
+    ax.set_xlim(0, CIRCLE_WIDTH)
+    ax.set_ylim(0, CIRCLE_HEIGHT)
     ax.axis("off")
 
     # Add pitch image as background
     pitch_path = Path("images/black_thalf.jpg")
     if pitch_path.exists():
         pitch_img = mpimg.imread(pitch_path)
-        ax.imshow(pitch_img, extent=[0, 10, 0, 14], aspect="auto", alpha=0.3)
+        ax.imshow(
+            pitch_img,
+            extent=[0, CIRCLE_WIDTH, 0, CIRCLE_HEIGHT - 1],
+            aspect="auto",
+        )
 
     # Border
     rect = Rectangle(
         (0, 0),
-        10,
-        14,
+        CIRCLE_WIDTH,
+        CIRCLE_HEIGHT,
         facecolor="none",
-        edgecolor=COLOURS["White"],
+        edgecolor=COLOURS["Black"],
         linewidth=LINE_WIDTHS["thick"],
     )
     ax.add_patch(rect)
 
     # Black background for title
     title_rect = Rectangle(
-        (0, 12.7), 10, 1.3, facecolor=COLOURS["Black"], edgecolor="none"
+        (0, CIRCLE_HEIGHT - 1),
+        CIRCLE_WIDTH,
+        1,
+        facecolor=COLOURS["Black"],
+        edgecolor="none",
     )
     ax.add_patch(title_rect)
 
     # Title
     ax.text(
-        5,
-        13.35,
+        CIRCLE_WIDTH / 2,
+        CIRCLE_HEIGHT - 0.5,
         title,
         fontsize=FONT_SIZES["medium"],
         color=COLOURS["White"],
@@ -700,166 +720,86 @@ def _add_circle_section(fig, circle_stats, x_pos, y_pos, title):
     right_baseline = circle_stats["right_baseline"]
 
     # Draw simplified circle representation
-    y_circle = 9
+    y_circle = CIRCLE_HEIGHT - 3
 
-    # Top arc positions
-    top_positions = [left_baseline, l45, centre, r45, right_baseline]
-    top_x = [1.5, 3, 5, 7, 8.5]
+    # Arc positions
+    arc_x = [1, 1.4, CIRCLE_WIDTH / 2 - 0.5, CIRCLE_WIDTH - 2.4, CIRCLE_WIDTH - 2]
+    arc_y = [y_circle, y_circle - 1.2, y_circle - 1.5, y_circle - 1.2, y_circle]
 
     # Top boxes
-    for value, x in zip([left_baseline, right_baseline], [1.5, 8.5]):
-        rect = Rectangle(
-            (x - 0.6, y_circle + 1.5),
-            1.2,
-            0.8,
-            facecolor=COLOURS["Beige"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
+    for value, x, y in zip(
+        [left_baseline, right_baseline], [arc_x[0], arc_x[-1]], [arc_y[0], arc_y[-1]]
+    ):
+        add_box(
             x,
-            y_circle + 1.9,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
+            y,
+            "",
+            value,
+            ax,
         )
 
-    # Middle arc positions (l45, centre, r45)
-    for value, x in zip([l45, centre, r45], [3, 5, 7]):
-        rect = Rectangle(
-            (x - 0.6, y_circle + 0.3),
-            1.2,
-            0.8,
-            facecolor=COLOURS["Beige"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
+    # Middle arc positions (l45, r45)
+    for value, x, y in zip([l45, r45], [arc_x[1], arc_x[3]], [arc_y[1], arc_y[3]]):
+        add_box(
             x,
-            y_circle + 0.7,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
+            y,
+            "",
+            value,
+            ax,
         )
 
     # Center position (additional centre display in middle)
-    rect = Rectangle(
-        (4.3, y_circle - 1.2),
-        1.4,
-        0.8,
-        facecolor=COLOURS["Beige"],
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thin"],
-        linestyle="--",
-    )
-    ax.add_patch(rect)
-    ax.text(
-        5,
-        y_circle - 0.8,
-        str(centre),
-        fontsize=FONT_SIZES["medium"],
-        fontweight="bold",
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
+    add_box(
+        arc_x[2],
+        arc_y[2],
+        "",
+        centre,
+        ax,
     )
 
-    # Bottom row: Goal, Upgrade, Saved, Recycled
+    # Bottom stats boxes
+    row_y = np.linspace(3, 1, 2)
+    row_x = np.linspace(0.5, CIRCLE_WIDTH - 1.5, 4)
+
+    # 1st row: Goal, Upgrade, Saved, Recycled
     goal = circle_stats["goal"]
     upgrade = circle_stats["upgrade"]
     saved = circle_stats["saved"]
     recycled = circle_stats["recycled"]
 
-    y_bottom = 5.5
     labels = ["GOAL", "UPGRADE", "SAVED", "RECYCLED"]
     values = [goal, upgrade, saved, recycled]
 
-    for i, (label, value) in enumerate(zip(labels, values)):
-        x = 0.8 + i * 2.3
+    for label, value, x in zip(labels, values, row_x):
         # Color coding
-        if label == "GOAL":
-            bgcolor = COLOURS["Light green"] if value > 0 else COLOURS["Beige"]
-        elif label == "UPGRADE":
-            bgcolor = COLOURS["Light pink"]
-        elif label == "SAVED":
-            bgcolor = COLOURS["Light yellow"]
-        else:
-            bgcolor = COLOURS["Beige"]
+        bgcolor = COLOURS["White"]
 
-        rect = Rectangle(
-            (x, y_bottom),
-            1.8,
-            1.0,
-            facecolor=bgcolor,
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
-            x + 0.9,
-            y_bottom + 0.75,
+        add_box(
+            x,
+            row_y[0],
             label,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
-        )
-        ax.text(
-            x + 0.9,
-            y_bottom + 0.25,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
+            value,
+            ax,
+            bgcolor=bgcolor,
         )
 
     # Bottom row: Miss, Turnover
     miss = circle_stats["miss"]
     turnover = circle_stats["turnover"]
 
-    y_bottom2 = 4.0
     labels2 = ["MISS", "TURNOVER"]
     values2 = [miss, turnover]
 
-    for i, (label, value) in enumerate(zip(labels2, values2)):
-        x = 3 + i * 2.5
-        bgcolor = COLOURS["Light pink"] if label == "MISS" else COLOURS["Beige"]
+    for label, value, x in zip(
+        labels2, values2, [CIRCLE_WIDTH / 2 - 1.5, CIRCLE_WIDTH / 2 + 0.5]
+    ):
+        bgcolor = COLOURS["White"]
 
-        rect = Rectangle(
-            (x, y_bottom2),
-            1.8,
-            1.0,
-            facecolor=bgcolor,
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
-            x + 0.9,
-            y_bottom2 + 0.75,
+        add_box(
+            x,
+            row_y[1],
             label,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
-        )
-        ax.text(
-            x + 0.9,
-            y_bottom2 + 0.25,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
+            value,
+            ax,
+            bgcolor=bgcolor,
         )

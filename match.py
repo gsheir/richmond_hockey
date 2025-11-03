@@ -77,8 +77,6 @@ class Match:
         self._extract_circle_entry_stats()
         self._extract_goals()
 
-        print(f"Stats for {self.json_file}: {self.stats}")
-
     def _extract_quarters(self):
         """Extract quarter boundaries from Quarter Start events"""
         quarter_events = self.events[
@@ -161,7 +159,7 @@ class Match:
         # Helper function to safely count tags
         def count_tag(df, tag):
             if tag in df.columns:
-                return len(df[df[tag] == True])
+                return len(df[df[tag]])
             return 0
 
         # PCA stats
@@ -212,7 +210,7 @@ class Match:
         # Helper function to safely count tags
         def count_tag(df, tag):
             if tag in df.columns:
-                return len(df[df[tag] == True])
+                return len(df[df[tag]])
             return 0
 
         # Circle ATT stats

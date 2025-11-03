@@ -52,6 +52,9 @@ V_ANCHOR_1 = CONTENT_LEFT + 0.42
 PC_WIDTH = 6
 PC_HEIGHT = 7
 
+CIRCLE_WIDTH = 6
+CIRCLE_HEIGHT = 10
+
 # Coordinates defined as (left, bottom, width, height)
 ELEMENT_COORDINATES = {
     "logo_position": (
@@ -102,7 +105,18 @@ ELEMENT_COORDINATES = {
         PC_WIDTH * STD_WIDTH,
         PC_HEIGHT * STD_HEIGHT,
     ),
-    "circle_position": (0.65, 0.05, 0.3, 0.3),
+    "circle_att_position": (
+        V_ANCHOR_1,
+        0.1,
+        CIRCLE_WIDTH * STD_WIDTH,
+        CIRCLE_HEIGHT * STD_HEIGHT,
+    ),
+    "circle_def_position": (
+        V_ANCHOR_1 + PC_WIDTH * STD_WIDTH + STD_GAP,
+        0.1,
+        CIRCLE_WIDTH * STD_WIDTH,
+        CIRCLE_HEIGHT * STD_HEIGHT,
+    ),
 }
 
 # Line widths
