@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import FancyBboxPatch, Rectangle
 
 from settings import (
@@ -13,6 +14,8 @@ from settings import (
     FIG_SIZE,
     FONT_SIZES,
     LINE_WIDTHS,
+    PC_HEIGHT,
+    PC_WIDTH,
     TITLE_HEIGHT,
 )
 
@@ -61,9 +64,8 @@ def create_dashboard(match, team_name="Richmond M1", opponent_name="Opponent"):
     _add_result_box(fig, total_for, total_against)
     _add_period_scores(fig, match.stats["goals_by_quarter"])
     _add_overall_stats(fig, match)
-
-    # _add_quarter_stats_tables(fig, match)
-    # _add_pca_pcd(fig, match.stats)
+    _add_quarter_stats_tables(fig, match)
+    _add_pca_pcd(fig, match.stats)
     # _add_circle_entries(fig, match.stats)
 
     return fig
@@ -92,7 +94,7 @@ def _add_result_box(fig, for_score, against_score):
         0.5,
         0.7,
         "RESULT",
-        fontsize=FONT_SIZES["medium"],
+        fontsize=FONT_SIZES["large"],
         color=COLOURS["White"],
         ha="center",
         va="center",
@@ -126,7 +128,7 @@ def _add_period_scores(fig, goals_by_quarter):
         2,
         2.5,
         "WITHIN PERIOD",
-        fontsize=FONT_SIZES["medium"],
+        fontsize=FONT_SIZES["large"],
         color=COLOURS["White"],
         ha="center",
         va="center",
@@ -185,22 +187,20 @@ def _add_period_scores(fig, goals_by_quarter):
 
 def _add_overall_stats(fig, match):
     """Add overall stats table in center"""
-    ax = fig.add_axes([0.17, 0.42, 0.18, 0.41])
-    ax.set_xlim(0, 3)
-    ax.set_ylim(0, 10)
-    ax.axis("off")
+    ax = fig.add_axes(ELEMENT_COORDINATES["overall_stats_position"])
+    ax.set_xlim(0, 5)
+    ax.set_ylim(0, 7)
+    # ax.axis("off")
 
-    # Black background for title
-    title_rect = Rectangle(
-        (0, 9.3), 3, 0.7, facecolor=COLOURS["Black"], edgecolor="none"
-    )
+    # Black background
+    title_rect = Rectangle((0, 0), 5, 7, facecolor=COLOURS["Black"], edgecolor="none")
     ax.add_patch(title_rect)
 
     ax.text(
-        1.5,
-        9.65,
+        2.5,
+        6.5,
         "OVERALL STATS",
-        fontsize=FONT_SIZES["medium"],
+        fontsize=FONT_SIZES["large"],
         color=COLOURS["White"],
         ha="center",
         va="center",
@@ -217,8 +217,8 @@ def _add_overall_stats(fig, match):
         "Goals",
     ]
 
-    y_start = 8.5
-    y_step = 1.3
+    y_start = 5.5
+    y_step = 1
 
     for i, label in enumerate(stats_labels):
         y_pos = y_start - i * y_step
@@ -284,16 +284,16 @@ def _add_overall_stats(fig, match):
 
         # FOR box
         rect_for = Rectangle(
-            (0, y_pos - 0.4),
-            0.8,
-            0.8,
-            facecolor=COLOURS["Beige"],
+            (0, y_pos - 0.5),
+            1,
+            1,
+            facecolor=COLOURS["White"],
             edgecolor=COLOURS["Black"],
             linewidth=LINE_WIDTHS["thin"],
         )
         ax.add_patch(rect_for)
         ax.text(
-            0.4,
+            0.5,
             y_pos,
             str(for_count),
             fontsize=FONT_SIZES["medium"],
@@ -305,10 +305,11 @@ def _add_overall_stats(fig, match):
 
         # Label
         ax.text(
-            1.5,
+            2.5,
             y_pos,
             label,
-            fontsize=FONT_SIZES["small"],
+            fontsize=FONT_SIZES["medium"],
+            fontweight="bold",
             color=COLOURS["White"],
             ha="center",
             va="center",
@@ -316,16 +317,16 @@ def _add_overall_stats(fig, match):
 
         # AGAINST box
         rect_against = Rectangle(
-            (2.2, y_pos - 0.4),
-            0.8,
-            0.8,
-            facecolor=COLOURS["Light pink"],
+            (4, y_pos - 0.5),
+            1,
+            1,
+            facecolor=COLOURS["White"],
             edgecolor=COLOURS["Black"],
             linewidth=LINE_WIDTHS["thin"],
         )
         ax.add_patch(rect_against)
         ax.text(
-            2.6,
+            4.5,
             y_pos,
             str(against_count),
             fontsize=FONT_SIZES["medium"],
@@ -336,39 +337,31 @@ def _add_overall_stats(fig, match):
         )
 
 
-def _add_quarter_stats_tables(fig, match):
+def _add_single_quarter_stats_table(fig, match, is_for=True):
     """Add quarter-by-quarter stats tables on left and right sides"""
-    # FOR table (left side)
-    ax_for = fig.add_axes([0.025, 0.42, 0.12, 0.35])
-    ax_for.set_xlim(0, 5)
-    ax_for.set_ylim(0, 6)
-    ax_for.axis("off")
+
+    if is_for:
+        ax = fig.add_axes(ELEMENT_COORDINATES["quarter_stats_for_position"])
+    else:
+        ax = fig.add_axes(ELEMENT_COORDINATES["quarter_stats_against_position"])
+
+    ax.set_xlim(0, 4)
+    ax.set_ylim(0, 5)
+    # ax_for.axis("off")
 
     # Black background for FOR title
-    title_rect = Rectangle(
-        (0, 5.2), 5, 0.7, facecolor=COLOURS["Black"], edgecolor="none"
-    )
-    ax_for.add_patch(title_rect)
-    ax_for.text(
-        2.5,
-        5.55,
-        "FOR",
-        fontsize=FONT_SIZES["medium"],
-        color=COLOURS["White"],
-        ha="center",
-        va="center",
-        fontweight="bold",
-    )
+    title_rect = Rectangle((0, 4), 5, 1, facecolor=COLOURS["Black"], edgecolor="none")
+    ax.add_patch(title_rect)
 
     # Quarter headers
     quarters = ["Q1", "Q2", "Q3", "Q4"]
     for i, q in enumerate(quarters):
-        ax_for.text(
+        ax.text(
             i + 0.5,
-            4.8,
+            4.5,
             q,
             fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
+            color=COLOURS["White"],
             ha="center",
             va="center",
             fontweight="bold",
@@ -381,45 +374,54 @@ def _add_quarter_stats_tables(fig, match):
         "Circle entries",
         "Penalty corners",
     ]
-    y_positions = [4.0, 3.0, 2.0, 1.0]
+    y_positions = [3.5, 2.5, 1.5, 0.5]
+
+    if is_for:
+        col_str = "ATT"
+        pc_str = "PCA"
+    else:
+        col_str = "DEF"
+        pc_str = "PCD"
 
     for row_idx, (label, y_pos) in enumerate(zip(event_labels, y_positions)):
         for col_idx, q in enumerate(quarters):
             if q in match.stats["quarters"] and not match.stats["quarters"][q].empty:
                 q_events = match.stats["quarters"][q]
-                q_for = q_events[
-                    q_events["EventType"].str.contains("ATT", case=False, na=False)
+                q_events = q_events[
+                    q_events["EventType"].str.contains(col_str, case=False, na=False)
                 ]
 
                 # Count relevant events
                 if "restart" in label.lower():
                     count = len(
-                        q_for[
-                            q_for["EventType"].str.contains(
+                        q_events[
+                            q_events["EventType"].str.contains(
                                 "Own Half Restart", case=False, na=False
                             )
                         ]
                     )
                 elif "23 entries" in label.lower():
                     count = len(
-                        q_for[
-                            q_for["EventType"].str.contains(
+                        q_events[
+                            q_events["EventType"].str.contains(
                                 "23 Entry", case=False, na=False
                             )
                         ]
                     )
                 elif "Circle" in label:
                     count = len(
-                        q_for[
-                            q_for["EventType"].str.contains(
+                        q_events[
+                            q_events["EventType"].str.contains(
                                 "Circle Entry", case=False, na=False
                             )
                         ]
                     )
                 elif "Penalty" in label:
                     count = len(
-                        q_for[
-                            q_for["EventType"].str.contains("PCA", case=False, na=False)
+                        q_events[
+                            q_events["EventType"].str.contains(
+                                pc_str, case=False, na=False
+                            )
                         ]
                     )
                 else:
@@ -428,15 +430,15 @@ def _add_quarter_stats_tables(fig, match):
                 count = 0
 
             rect = Rectangle(
-                (col_idx, y_pos - 0.4),
+                (col_idx, y_pos - 0.5),
                 1,
-                0.8,
-                facecolor=COLOURS["Beige"],
+                1,
+                facecolor=COLOURS["White"],
                 edgecolor=COLOURS["Black"],
                 linewidth=LINE_WIDTHS["thin"],
             )
-            ax_for.add_patch(rect)
-            ax_for.text(
+            ax.add_patch(rect)
+            ax.text(
                 col_idx + 0.5,
                 y_pos,
                 str(count),
@@ -447,135 +449,91 @@ def _add_quarter_stats_tables(fig, match):
                 va="center",
             )
 
-    # AGAINST table (right side)
-    ax_against = fig.add_axes([0.855, 0.42, 0.12, 0.35])
-    ax_against.set_xlim(0, 5)
-    ax_against.set_ylim(0, 6)
-    ax_against.axis("off")
 
-    # Black background for AGAINST title
-    title_rect = Rectangle(
-        (0, 5.2), 5, 0.7, facecolor=COLOURS["Black"], edgecolor="none"
-    )
-    ax_against.add_patch(title_rect)
-    ax_against.text(
-        2.5,
-        5.55,
-        "AGAINST",
-        fontsize=FONT_SIZES["medium"],
-        color=COLOURS["White"],
-        ha="center",
-        va="center",
-        fontweight="bold",
-    )
-
-    # Quarter headers
-    for i, q in enumerate(quarters):
-        ax_against.text(
-            i + 0.5,
-            4.8,
-            q,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
-            fontweight="bold",
-        )
-
-    # Event counts by quarter
-    for row_idx, (label, y_pos) in enumerate(zip(event_labels, y_positions)):
-        for col_idx, q in enumerate(quarters):
-            if q in match.stats["quarters"] and not match.stats["quarters"][q].empty:
-                q_events = match.stats["quarters"][q]
-                q_against = q_events[
-                    q_events["EventType"].str.contains("DEF", case=False, na=False)
-                ]
-
-                # Count relevant events
-                if "restart" in label.lower():
-                    count = len(
-                        q_against[
-                            q_against["EventType"].str.contains(
-                                "Own Half Restart", case=False, na=False
-                            )
-                        ]
-                    )
-                elif "23 entries" in label.lower():
-                    count = len(
-                        q_against[
-                            q_against["EventType"].str.contains(
-                                "23 Entry", case=False, na=False
-                            )
-                        ]
-                    )
-                elif "Circle" in label:
-                    count = len(
-                        q_against[
-                            q_against["EventType"].str.contains(
-                                "Circle Entry", case=False, na=False
-                            )
-                        ]
-                    )
-                elif "Penalty" in label:
-                    count = len(
-                        q_against[
-                            q_against["EventType"].str.contains(
-                                "PCD", case=False, na=False
-                            )
-                        ]
-                    )
-                else:
-                    count = 0
-            else:
-                count = 0
-
-            rect = Rectangle(
-                (col_idx, y_pos - 0.4),
-                1,
-                0.8,
-                facecolor=COLOURS["Light pink"],
-                edgecolor=COLOURS["Black"],
-                linewidth=LINE_WIDTHS["thin"],
-            )
-            ax_against.add_patch(rect)
-            ax_against.text(
-                col_idx + 0.5,
-                y_pos,
-                str(count),
-                fontsize=FONT_SIZES["medium"],
-                fontweight="bold",
-                color=COLOURS["Black"],
-                ha="center",
-                va="center",
-            )
+def _add_quarter_stats_tables(fig, match):
+    """Add quarter stats tables for both FOR and AGAINST"""
+    _add_single_quarter_stats_table(fig, match, is_for=True)
+    _add_single_quarter_stats_table(fig, match, is_for=False)
 
 
 def _add_pca_pcd(fig, stats):
     """Add penalty corner attack and defense sections"""
     # PCA
-    _add_pc_section(fig, stats["pca"], 0.38, 0.815, "PCA")
+    _add_pc_section(
+        fig,
+        stats["pca"],
+        ELEMENT_COORDINATES["pca_position"],
+        "PCA",
+    )
     # PCD
-    _add_pc_section(fig, stats["pcd"], 0.61, 0.815, "PCD")
+    _add_pc_section(
+        fig,
+        stats["pcd"],
+        ELEMENT_COORDINATES["pcd_position"],
+        "PCD",
+    )
 
 
-def _add_pc_section(fig, pc_stats, x_pos, y_pos, title):
+def add_box(
+    x,
+    y,
+    label,
+    value,
+    ax,
+    width=1,
+    height=1,
+    bgcolor=COLOURS["White"],
+):
+    """Helper function to add a labeled box with value"""
+    rect = Rectangle(
+        (x, y),
+        width,
+        height,
+        facecolor=bgcolor,
+        edgecolor=COLOURS["Black"],
+        linewidth=LINE_WIDTHS["thin"],
+    )
+    ax.add_patch(rect)
+    ax.text(
+        x + 0.5 * width,
+        y + height,
+        label,
+        fontsize=FONT_SIZES["small"],
+        fontweight="bold",
+        color=COLOURS["White"],
+        ha="center",
+        va="bottom",
+    )
+    ax.text(
+        x + 0.5 * width,
+        y + 0.5 * height,
+        str(value),
+        fontsize=FONT_SIZES["medium"],
+        fontweight="bold",
+        color=COLOURS["Black"],
+        ha="center",
+        va="center",
+    )
+
+
+def _add_pc_section(fig, pc_stats, position, title):
     """Add a penalty corner section (PCA or PCD)"""
-    ax = fig.add_axes([x_pos, y_pos, 0.21, 0.10])
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    ax.axis("off")
+    ax = fig.add_axes(position)
+    ax.set_xlim(0, PC_WIDTH)
+    ax.set_ylim(0, PC_HEIGHT)
+    # ax.axis("off")
 
     # Add pitch image as background
     pitch_path = Path("images/black_tquarter.jpg")
     if pitch_path.exists():
         pitch_img = mpimg.imread(pitch_path)
-        ax.imshow(pitch_img, extent=[0, 10, 0, 10], aspect="auto", alpha=0.3)
+        ax.imshow(pitch_img, extent=[0, PC_WIDTH, 0, PC_HEIGHT - 1], aspect="auto")
 
     # Border
     rect = Rectangle(
         (0, 0),
-        10,
-        10,
+        PC_WIDTH,
+        PC_HEIGHT,
         facecolor="none",
         edgecolor=COLOURS["White"],
         linewidth=LINE_WIDTHS["thick"],
@@ -584,14 +542,14 @@ def _add_pc_section(fig, pc_stats, x_pos, y_pos, title):
 
     # Black background for title
     title_rect = Rectangle(
-        (0, 8.5), 10, 1.5, facecolor=COLOURS["Black"], edgecolor="none"
+        (0, PC_HEIGHT - 1), PC_WIDTH, 1, facecolor=COLOURS["Black"], edgecolor="none"
     )
     ax.add_patch(title_rect)
 
     # Title
     ax.text(
-        5,
-        9.25,
+        PC_WIDTH / 2,
+        PC_HEIGHT - 0.5,
         title,
         fontsize=FONT_SIZES["medium"],
         color=COLOURS["White"],
@@ -599,113 +557,30 @@ def _add_pc_section(fig, pc_stats, x_pos, y_pos, title):
         va="center",
         fontweight="bold",
     )
-    ax.text(
-        5,
-        9.5,
-        title,
-        fontsize=FONT_SIZES["medium"],
-        color=COLOURS["White"],
-        ha="center",
-        va="top",
-        fontweight="bold",
-    )
+
+    # Preset 3 and 4 column x positions
+    col_4_x = np.linspace(0.2, PC_WIDTH - 1.2, 4)
+    col_3_x = np.linspace(0.5, PC_WIDTH - 1.2, 3)
+
+    # Preset 3 row y positions
+    row_3_y = np.linspace(PC_HEIGHT - 2.5, 1, 3)
 
     # Top row: Goal, Ph2 Goal, Reawarded
     goal = pc_stats["goal"]
     ph2_goal = pc_stats["ph2_goal"]
     reawarded = pc_stats["reawarded"]
 
-    # Goal box (green if > 0)
-    goal_color = COLOURS["Light green"] if goal > 0 else COLOURS["Beige"]
-    rect = Rectangle(
-        (1, 7.5),
-        2,
-        1.2,
-        facecolor=goal_color,
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thin"],
-    )
-    ax.add_patch(rect)
-    ax.text(
-        2,
-        8.7,
-        "GOAL",
-        fontsize=FONT_SIZES["small"],
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
-    )
-    ax.text(
-        2,
-        7.9,
-        str(goal),
-        fontsize=FONT_SIZES["medium"],
-        fontweight="bold",
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
-    )
+    labels = ["GOAL", "PH2 GOAL", "REAWARD"]
+    values = [goal, ph2_goal, reawarded]
 
-    # Ph2 Goal box
-    ph2_color = COLOURS["Light green"] if ph2_goal > 0 else COLOURS["Beige"]
-    rect = Rectangle(
-        (4, 7.5),
-        2,
-        1.2,
-        facecolor=ph2_color,
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thin"],
-    )
-    ax.add_patch(rect)
-    ax.text(
-        5,
-        8.7,
-        "PH2 GOAL",
-        fontsize=FONT_SIZES["small"],
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
-    )
-    ax.text(
-        5,
-        7.9,
-        str(ph2_goal),
-        fontsize=FONT_SIZES["medium"],
-        fontweight="bold",
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
-    )
-
-    # Reawarded box
-    rect = Rectangle(
-        (7, 7.5),
-        2,
-        1.2,
-        facecolor=COLOURS["Beige"],
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thin"],
-    )
-    ax.add_patch(rect)
-    ax.text(
-        8,
-        8.7,
-        "REAWARDED",
-        fontsize=FONT_SIZES["small"],
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
-    )
-    ax.text(
-        8,
-        7.9,
-        str(reawarded),
-        fontsize=FONT_SIZES["medium"],
-        fontweight="bold",
-        color=COLOURS["Black"],
-        ha="center",
-        va="center",
-    )
+    for label, value, x in zip(labels, values, col_3_x):
+        add_box(
+            x,
+            row_3_y[0],
+            label,
+            value,
+            ax,
+        )
 
     # Second row: Saved, Recycled, Miss, Turnover
     saved = pc_stats["saved"]
@@ -713,39 +588,16 @@ def _add_pc_section(fig, pc_stats, x_pos, y_pos, title):
     miss = pc_stats["miss"]
     turnover = pc_stats["turnover"]
 
-    y2 = 6.0
     labels = ["SAVED", "RECYCLED", "MISS", "TURNOVER"]
     values = [saved, recycled, miss, turnover]
-    x_positions = [0.5, 3, 5.5, 8]
 
-    for label, value, x in zip(labels, values, x_positions):
-        rect = Rectangle(
-            (x, y2),
-            1.8,
-            1.2,
-            facecolor=COLOURS["Beige"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
-            x + 0.9,
-            y2 + 1.0,
+    for label, value, x in zip(labels, values, col_4_x):
+        add_box(
+            x,
+            row_3_y[1],
             label,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
-        )
-        ax.text(
-            x + 0.9,
-            y2 + 0.3,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
+            value,
+            ax,
         )
 
     # Third row: Left, Right, Straight, Variation (Castle vs Routine)
@@ -754,95 +606,39 @@ def _add_pc_section(fig, pc_stats, x_pos, y_pos, title):
     straight = pc_stats["straight"]
     variation = pc_stats["variation"]
 
-    y3 = 4.3
+    labels = ["LEFT", "RIGHT", "STRAIGHT", "VARIATION"]
+    values = [left, right, straight, variation]
+
+    for label, value, x in zip(labels, values, col_4_x):
+        add_box(
+            x,
+            row_3_y[2],
+            label,
+            value,
+            ax,
+        )
+
     ax.text(
-        2.5,
-        y3 + 0.5,
+        np.mean(col_4_x[:2]) + 0.5,
+        0.2,
         "CASTLE",
         fontsize=FONT_SIZES["small"],
+        fontweight="bold",
         color=COLOURS["White"],
         ha="center",
-        va="center",
+        va="bottom",
     )
+
     ax.text(
-        7.5,
-        y3 + 0.5,
+        np.mean(col_4_x[2:]) + 0.5,
+        0.2,
         "ROUTINE",
         fontsize=FONT_SIZES["small"],
+        fontweight="bold",
         color=COLOURS["White"],
         ha="center",
-        va="center",
+        va="bottom",
     )
-
-    # Castle: Left, Right, Straight
-    castle_labels = ["LEFT", "RIGHT", "STRAIGHT"]
-    castle_values = [left, right, straight]
-    castle_x = [0.5, 1.8, 3.1]
-
-    for label, value, x in zip(castle_labels, castle_values, castle_x):
-        rect = Rectangle(
-            (x, y3 - 0.8),
-            1.0,
-            1.0,
-            facecolor=COLOURS["Beige"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
-            x + 0.5,
-            y3 - 0.5,
-            label,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
-            ha="center",
-            va="top",
-        )
-        ax.text(
-            x + 0.5,
-            y3 - 0.15,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
-        )
-
-    # Routine: Straight, Variation
-    routine_labels = ["STRAIGHT", "VARIATION"]
-    routine_values = [straight, variation]
-    routine_x = [6, 7.8]
-
-    for label, value, x in zip(routine_labels, routine_values, routine_x):
-        rect = Rectangle(
-            (x, y3 - 0.8),
-            1.5,
-            1.0,
-            facecolor=COLOURS["Beige"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
-        )
-        ax.add_patch(rect)
-        ax.text(
-            x + 0.75,
-            y3 - 0.5,
-            label,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["Black"],
-            ha="center",
-            va="top",
-        )
-        ax.text(
-            x + 0.75,
-            y3 - 0.15,
-            str(value),
-            fontsize=FONT_SIZES["medium"],
-            fontweight="bold",
-            color=COLOURS["Black"],
-            ha="center",
-            va="center",
-        )
 
 
 def _add_circle_entries(fig, stats):
