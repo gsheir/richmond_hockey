@@ -14,9 +14,9 @@ COLOURS = {
     "Richmond red": "#660000",
     "White": "#FFFFFF",
     "Black": "#000000",
-    "Light green": "#90EE90",
-    "Light pink": "#FFB6C1",
-    "Beige": "#F5F5DC",
+    "Light green": "#63EF63",
+    "Light pink": "#FF8799",
+    "Grey": "#7B7B7B",
     "Light yellow": "#FFFACD",
 }
 FONT_SIZES = {
@@ -55,6 +55,9 @@ PC_HEIGHT = 7
 CIRCLE_WIDTH = 6
 CIRCLE_HEIGHT = 10
 
+OVERALL_HEIGHT = 10
+OVERALL_WIDTH = 5
+
 # Coordinates defined as (left, bottom, width, height)
 ELEMENT_COORDINATES = {
     "logo_position": (
@@ -77,9 +80,9 @@ ELEMENT_COORDINATES = {
     ),
     "overall_stats_position": (
         V_ANCHOR_0,
-        0.3,
-        5 * STD_WIDTH,
-        7 * STD_HEIGHT,
+        0.18,
+        OVERALL_WIDTH * STD_WIDTH,
+        OVERALL_HEIGHT * STD_HEIGHT,
     ),
     "quarter_stats_for_position": (
         V_ANCHOR_0 - 2 * STD_WIDTH - STD_GAP,
@@ -174,6 +177,10 @@ EVENT_NAMES = {
     "Penalty Strokes": {
         "att": "Stroke ATT",
         "def": "Stroke DEF",
+    },
+    "Goals": {
+        "att": "Goal FOR",
+        "def": "Goal AGAINST",
     },
     "Green Cards": {
         "att": "GC Man Down",

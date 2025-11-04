@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from settings import MATCH_DATA_DIR, TAG_NAMES
+from settings import EVENT_NAMES, MATCH_DATA_DIR, TAG_NAMES
 
 
 class Match:
@@ -117,10 +117,14 @@ class Match:
     def _extract_for_against_stats(self):
         """Separate events into FOR (ATT) and AGAINST (DEF) based on event type"""
         self.stats["for_events"] = self.events[
-            self.events["EventType"].str.contains("ATT", case=False, na=False)
+            self.events["EventType"].isin(
+                [event["att"] for event in EVENT_NAMES.values()]
+            )
         ]
         self.stats["against_events"] = self.events[
-            self.events["EventType"].str.contains("DEF", case=False, na=False)
+            self.events["EventType"].isin(
+                [event["def"] for event in EVENT_NAMES.values()]
+            )
         ]
 
         # Count by quarter
@@ -135,12 +139,16 @@ class Match:
                 q_events = self.stats["quarters"][quarter]
                 self.stats["for_by_quarter"][quarter] = len(
                     q_events[
-                        q_events["EventType"].str.contains("ATT", case=False, na=False)
+                        q_events["EventType"].isin(
+                            [event["att"] for event in EVENT_NAMES.values()]
+                        )
                     ]
                 )
                 self.stats["against_by_quarter"][quarter] = len(
                     q_events[
-                        q_events["EventType"].str.contains("DEF", case=False, na=False)
+                        q_events["EventType"].isin(
+                            [event["def"] for event in EVENT_NAMES.values()]
+                        )
                     ]
                 )
             else:
@@ -156,10 +164,10 @@ class Match:
     def _extract_penalty_corner_stats(self):
         """Extract penalty corner outcomes"""
         pc_att = self.events[
-            self.events["EventType"].str.contains("PCA", case=False, na=False)
+            self.events["EventType"] == EVENT_NAMES["Penalty Corners"]["att"]
         ]
         pc_def = self.events[
-            self.events["EventType"].str.contains("PCD", case=False, na=False)
+            self.events["EventType"] == EVENT_NAMES["Penalty Corners"]["def"]
         ]
 
         # PCA stats
@@ -177,14 +185,10 @@ class Match:
     def _extract_circle_entry_stats(self):
         """Extract circle entry outcomes and positions"""
         circle_att = self.events[
-            self.events["EventType"].str.contains(
-                "Circle Entry ATT", case=False, na=False
-            )
+            self.events["EventType"] == EVENT_NAMES["Circle Entries"]["att"]
         ]
         circle_def = self.events[
-            self.events["EventType"].str.contains(
-                "Circle Entry DEF", case=False, na=False
-            )
+            self.events["EventType"] == EVENT_NAMES["Circle Entries"]["def"]
         ]
 
         # Circle ATT stats
@@ -204,11 +208,9 @@ class Match:
         self.stats["goals_by_quarter"] = {"for": {}, "against": {}}
 
         # Get goal events
-        for_goals = self.events[
-            self.events["EventType"].str.contains("Goal FOR", case=False, na=False)
-        ]
+        for_goals = self.events[self.events["EventType"] == EVENT_NAMES["Goals"]["att"]]
         against_goals = self.events[
-            self.events["EventType"].str.contains("Goal AGAINST", case=False, na=False)
+            self.events["EventType"] == EVENT_NAMES["Goals"]["def"]
         ]
 
         for quarter in ["Q1", "Q2", "Q3", "Q4"]:

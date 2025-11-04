@@ -18,6 +18,8 @@ from settings import (
     FIG_SIZE,
     FONT_SIZES,
     LINE_WIDTHS,
+    OVERALL_HEIGHT,
+    OVERALL_WIDTH,
     PC_HEIGHT,
     PC_WIDTH,
     TITLE_HEIGHT,
@@ -185,7 +187,7 @@ def _add_period_scores(fig, goals_by_quarter):
         if for_goals > against_goals:
             bgcolor = COLOURS["Light green"]
         elif for_goals == against_goals:
-            bgcolor = COLOURS["Beige"]
+            bgcolor = COLOURS["White"]
         else:
             bgcolor = COLOURS["Light pink"]
 
@@ -214,17 +216,23 @@ def _add_period_scores(fig, goals_by_quarter):
 def _add_overall_stats(fig, match):
     """Add overall stats table in center"""
     ax = fig.add_axes(ELEMENT_COORDINATES["overall_stats_position"])
-    ax.set_xlim(0, 5)
-    ax.set_ylim(0, 7)
+    ax.set_xlim(0, OVERALL_WIDTH)
+    ax.set_ylim(0, OVERALL_HEIGHT)
     ax.axis("off")
 
     # Black background
-    title_rect = Rectangle((0, 0), 5, 7, facecolor=COLOURS["Black"], edgecolor="none")
+    title_rect = Rectangle(
+        (0, 0),
+        OVERALL_WIDTH,
+        OVERALL_HEIGHT,
+        facecolor=COLOURS["Black"],
+        edgecolor="none",
+    )
     ax.add_patch(title_rect)
 
     ax.text(
-        2.5,
-        6.5,
+        OVERALL_WIDTH / 2,
+        OVERALL_HEIGHT - 0.5,
         "OVERALL STATS",
         fontsize=FONT_SIZES["large"],
         color=COLOURS["White"],
@@ -234,79 +242,28 @@ def _add_overall_stats(fig, match):
     )
 
     # Stats labels
-    stats_labels = [
-        "Own half restarts",
-        "23 entries",
-        "Circle entries",
-        "Penalty corners",
-        "Penalty strokes",
-        "Goals",
-    ]
-
-    y_start = 5.5
+    y_start = OVERALL_HEIGHT - 1.5
     y_step = 1
 
-    for i, label in enumerate(stats_labels):
+    for i, label in enumerate(EVENT_NAMES.keys()):
         y_pos = y_start - i * y_step
 
         # Count FOR events
-        for_count = 0
-        against_count = 0
-
-        if "restart" in label.lower():
-            for_count = len(
-                match.stats["for_events"][
-                    match.stats["for_events"]["EventType"].str.contains(
-                        "Own Half Restart", case=False, na=False
-                    )
-                ]
-            )
-            against_count = len(
-                match.stats["against_events"][
-                    match.stats["against_events"]["EventType"].str.contains(
-                        "Own Half Restart", case=False, na=False
-                    )
-                ]
-            )
-        elif "23 entries" in label.lower():
-            for_count = len(
-                match.stats["for_events"][
-                    match.stats["for_events"]["EventType"].str.contains(
-                        "23 Entry", case=False, na=False
-                    )
-                ]
-            )
-            against_count = len(
-                match.stats["against_events"][
-                    match.stats["against_events"]["EventType"].str.contains(
-                        "23 Entry", case=False, na=False
-                    )
-                ]
-            )
-        elif "Circle" in label:
-            for_count = match.stats["circle_att"]["total"]
-            against_count = match.stats["circle_def"]["total"]
-        elif "Penalty corners" in label:
-            for_count = match.stats["pca"]["total"]
-            against_count = match.stats["pcd"]["total"]
-        elif "Penalty strokes" in label:
-            for_count = len(
-                match.stats["for_events"][
-                    match.stats["for_events"]["EventType"].str.contains(
-                        "Penalty Stroke", case=False, na=False
-                    )
-                ]
-            )
-            against_count = len(
-                match.stats["against_events"][
-                    match.stats["against_events"]["EventType"].str.contains(
-                        "Penalty Stroke", case=False, na=False
-                    )
-                ]
-            )
-        elif "Goals" in label:
-            for_count = sum(match.stats["goals_by_quarter"]["for"].values())
-            against_count = sum(match.stats["goals_by_quarter"]["against"].values())
+        for_count = len(
+            match.stats["for_events"][
+                match.stats["for_events"]["EventType"].str.contains(
+                    EVENT_NAMES[label]["att"], case=False, na=False
+                )
+            ]
+        )
+        # Count AGAINST events
+        against_count = len(
+            match.stats["against_events"][
+                match.stats["against_events"]["EventType"].str.contains(
+                    EVENT_NAMES[label]["def"], case=False, na=False
+                )
+            ]
+        )
 
         # FOR box
         rect_for = Rectangle(
@@ -343,7 +300,7 @@ def _add_overall_stats(fig, match):
 
         # AGAINST box
         rect_against = Rectangle(
-            (4, y_pos - 0.5),
+            (OVERALL_WIDTH - 1, y_pos - 0.5),
             1,
             1,
             facecolor=COLOURS["White"],
@@ -352,7 +309,7 @@ def _add_overall_stats(fig, match):
         )
         ax.add_patch(rect_against)
         ax.text(
-            4.5,
+            OVERALL_WIDTH - 0.5,
             y_pos,
             str(against_count),
             fontsize=FONT_SIZES["medium"],
@@ -430,7 +387,7 @@ def _add_single_quarter_stats_table(fig, match, side="att"):
 
         # Apply conditional formatting to all rows
         if len(row_counts) > 0:
-            min_count = min(row_counts)
+            min_count = 0
             max_count = max(row_counts)
         else:
             min_count = max_count = None
@@ -442,11 +399,11 @@ def _add_single_quarter_stats_table(fig, match, side="att"):
                     count,
                     min_count,
                     max_count,
-                    COLOURS["Beige"],
-                    COLOURS["Light green"],
+                    COLOURS["Grey"],
+                    COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
                 )
             else:
-                bgcolor = COLOURS["White"]
+                bgcolor = COLOURS["Grey"]
 
             rect = Rectangle(
                 (col_idx, y_pos - 0.5),
@@ -483,6 +440,7 @@ def _add_pca_pcd(fig, stats):
         stats["pca"],
         ELEMENT_COORDINATES["pca_position"],
         "PCA",
+        side="att",
     )
     # PCD
     _add_pc_section(
@@ -490,6 +448,7 @@ def _add_pca_pcd(fig, stats):
         stats["pcd"],
         ELEMENT_COORDINATES["pcd_position"],
         "PCD",
+        side="def",
     )
 
 
@@ -535,7 +494,7 @@ def add_box(
     )
 
 
-def _add_pc_section(fig, pc_stats, position, title):
+def _add_pc_section(fig, pc_stats, position, title, side="att"):
     """Add a penalty corner section (PCA or PCD)"""
     ax = fig.add_axes(position)
     ax.set_xlim(0, PC_WIDTH)
@@ -592,31 +551,69 @@ def _add_pc_section(fig, pc_stats, position, title):
     labels = ["GOAL", "PH2 GOAL", "REAWARD"]
     values = [goal, ph2_goal, reawarded]
 
-    for label, value, x in zip(labels, values, col_3_x):
-        add_box(
-            x,
-            row_3_y[0],
-            label,
-            value,
-            ax,
-        )
-
     # Second row: Saved, Recycled, Miss, Turnover
     saved = pc_stats["saved"]
     recycled = pc_stats["recycled"]
     miss = pc_stats["miss"]
     turnover = pc_stats["turnover"]
 
+    # Group 1: Goal, PH2 goal, Reawarded, Saved, Recycled (good outcomes)
+    group1_values = [goal, ph2_goal, reawarded, saved, recycled]
+    min_group1 = 0
+    max_group1 = max(group1_values)
+
+    # Group 2: Miss, Turnover (bad outcomes)
+    group2_values = [miss, turnover]
+    min_group2 = 0
+    max_group2 = max(group2_values)
+
+    # Re-draw top row with conditional formatting
+    for label, value, x in zip(labels, values, col_3_x):
+        bgcolor = interpolate_color(
+            value,
+            min_group1,
+            max_group1,
+            COLOURS["Grey"],
+            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+        )
+        add_box(
+            x,
+            row_3_y[0],
+            label,
+            value,
+            ax,
+            bgcolor=bgcolor,
+        )
+
     labels = ["SAVED", "RECYCLED", "MISS", "TURNOVER"]
     values = [saved, recycled, miss, turnover]
 
-    for label, value, x in zip(labels, values, col_4_x):
+    for i, (label, value, x) in enumerate(zip(labels, values, col_4_x)):
+        # First two are group 1, last two are group 2
+        if i < 2:
+            bgcolor = interpolate_color(
+                value,
+                min_group1,
+                max_group1,
+                COLOURS["Grey"],
+                COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+            )
+        else:
+            bgcolor = interpolate_color(
+                value,
+                min_group2,
+                max_group2,
+                COLOURS["Grey"],
+                COLOURS["Light pink"] if side == "att" else COLOURS["Light green"],
+            )
+
         add_box(
             x,
             row_3_y[1],
             label,
             value,
             ax,
+            bgcolor=bgcolor,
         )
 
     # Third row: Left, Right, Straight, Variation (Castle vs Routine)
@@ -625,16 +622,29 @@ def _add_pc_section(fig, pc_stats, position, title):
     straight = pc_stats["straight"]
     variation = pc_stats["variation"]
 
+    # Group 3: All direction values
+    group3_values = [left, right, straight, variation]
+    min_group3 = 0
+    max_group3 = max(group3_values)
+
     labels = ["LEFT", "RIGHT", "STRAIGHT", "VARIATION"]
     values = [left, right, straight, variation]
 
     for label, value, x in zip(labels, values, col_4_x):
+        bgcolor = interpolate_color(
+            value,
+            min_group3,
+            max_group3,
+            COLOURS["Grey"],
+            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+        )
         add_box(
             x,
             row_3_y[2],
             label,
             value,
             ax,
+            bgcolor=bgcolor,
         )
 
     ax.text(
@@ -668,6 +678,7 @@ def _add_circle_entries(fig, stats):
         stats["circle_att"],
         ELEMENT_COORDINATES["circle_att_position"],
         "CIRCLE ATT",
+        side="att",
     )
     # Circle DEF
     _add_circle_section(
@@ -675,10 +686,11 @@ def _add_circle_entries(fig, stats):
         stats["circle_def"],
         ELEMENT_COORDINATES["circle_def_position"],
         "CIRCLE DEF",
+        side="def",
     )
 
 
-def _add_circle_section(fig, circle_stats, position, title):
+def _add_circle_section(fig, circle_stats, position, title, side="att"):
     """Add a circle entry section (ATT or DEF)"""
     ax = fig.add_axes(position)
     ax.set_xlim(0, CIRCLE_WIDTH)
@@ -736,6 +748,11 @@ def _add_circle_section(fig, circle_stats, position, title):
     r45 = circle_stats["r45"]
     right_baseline = circle_stats["right_baseline"]
 
+    # Calculate min/max for conditional formatting
+    position_values = [left_baseline, l45, centre, r45, right_baseline]
+    min_position = 0
+    max_position = max(position_values)
+
     # Draw simplified circle representation
     y_circle = CIRCLE_HEIGHT - 3
 
@@ -743,35 +760,59 @@ def _add_circle_section(fig, circle_stats, position, title):
     arc_x = [1, 1.4, CIRCLE_WIDTH / 2 - 0.5, CIRCLE_WIDTH - 2.4, CIRCLE_WIDTH - 2]
     arc_y = [y_circle, y_circle - 1.2, y_circle - 1.5, y_circle - 1.2, y_circle]
 
-    # Top boxes
+    # Top boxes with conditional formatting
     for value, x, y in zip(
         [left_baseline, right_baseline], [arc_x[0], arc_x[-1]], [arc_y[0], arc_y[-1]]
     ):
+        bgcolor = interpolate_color(
+            value,
+            min_position,
+            max_position,
+            COLOURS["Grey"],
+            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+        )
         add_box(
             x,
             y,
             "",
             value,
             ax,
+            bgcolor=bgcolor,
         )
 
-    # Middle arc positions (l45, r45)
+    # Middle arc positions (l45, r45) with conditional formatting
     for value, x, y in zip([l45, r45], [arc_x[1], arc_x[3]], [arc_y[1], arc_y[3]]):
+        bgcolor = interpolate_color(
+            value,
+            min_position,
+            max_position,
+            COLOURS["Grey"],
+            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+        )
         add_box(
             x,
             y,
             "",
             value,
             ax,
+            bgcolor=bgcolor,
         )
 
-    # Center position (additional centre display in middle)
+    # Center position with conditional formatting
+    bgcolor = interpolate_color(
+        centre,
+        min_position,
+        max_position,
+        COLOURS["Grey"],
+        COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+    )
     add_box(
         arc_x[2],
         arc_y[2],
         "",
         centre,
         ax,
+        bgcolor=bgcolor,
     )
 
     # Bottom stats boxes
@@ -787,9 +828,19 @@ def _add_circle_section(fig, circle_stats, position, title):
     labels = ["GOAL", "UPGRADE", "SAVED", "RECYCLED"]
     values = [goal, upgrade, saved, recycled]
 
+    # Calculate min/max for first row
+    min_val_row1 = 0
+    max_val_row1 = max(values)
+
     for label, value, x in zip(labels, values, row_x):
-        # Color coding
-        bgcolor = COLOURS["White"]
+        # Conditional formatting
+        bgcolor = interpolate_color(
+            value,
+            min_val_row1,
+            max_val_row1,
+            COLOURS["Grey"],
+            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+        )
 
         add_box(
             x,
@@ -807,10 +858,21 @@ def _add_circle_section(fig, circle_stats, position, title):
     labels2 = ["MISS", "TURNOVER"]
     values2 = [miss, turnover]
 
+    # Calculate min/max for second row
+    min_val_row2 = 0
+    max_val_row2 = max(values2)
+
     for label, value, x in zip(
         labels2, values2, [CIRCLE_WIDTH / 2 - 1.5, CIRCLE_WIDTH / 2 + 0.5]
     ):
-        bgcolor = COLOURS["White"]
+        # Conditional formatting
+        bgcolor = interpolate_color(
+            value,
+            min_val_row2,
+            max_val_row2,
+            COLOURS["Grey"],
+            COLOURS["Light pink"] if side == "att" else COLOURS["Light green"],
+        )
 
         add_box(
             x,
