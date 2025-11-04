@@ -27,32 +27,26 @@ def load_data():
     return matches
 
 
-def generate_dashboard(match_name="Old Loughts (A)"):
-    """Generate dashboard for a specific match"""
+def generate_all_dashboards():
+    """Generate dashboards for all matches"""
     matches = load_data()
 
-    if match_name not in matches:
-        print(f"Match '{match_name}' not found. Available matches:")
-        for name in matches.keys():
-            print(f"  - {name}")
-        return
+    for match_name, match in matches.items():
+        print(f"\nGenerating dashboard for: {match_name}")
 
-    match = matches[match_name]
-    print(f"\nGenerating dashboard for: {match_name}")
+        # Create dashboard
+        fig = create_dashboard(match, team_name="Richmond M1", opponent_name=match_name)
 
-    # Create dashboard
-    fig = create_dashboard(
-        match, team_name="Richmond M1", opponent_name="Old Loughtonians M1"
-    )
+        # Save to output
+        output_path = Path(OUTPUT_DIR) / f"{match_name.replace(' ', '_')}_dashboard.png"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, dpi=150, facecolor=fig.get_facecolor())
+        print(f"Dashboard saved to: {output_path}")
 
-    # Save to output
-    output_path = Path(OUTPUT_DIR) / f"{match_name.replace(' ', '_')}_dashboard.png"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=150, facecolor=fig.get_facecolor())
-    print(f"Dashboard saved to: {output_path}")
+        fig.clf()  # Clear figure to free memory
 
-    return fig
+    return
 
 
 if __name__ == "__main__":
-    generate_dashboard()
+    generate_all_dashboards()

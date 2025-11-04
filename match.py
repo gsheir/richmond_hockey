@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from settings import MATCH_DATA_DIR
+from settings import MATCH_DATA_DIR, TAG_NAMES
 
 
 class Match:
@@ -147,6 +147,12 @@ class Match:
                 self.stats["for_by_quarter"][quarter] = 0
                 self.stats["against_by_quarter"][quarter] = 0
 
+    def count_tag(self, df, tags: list[str]):
+        for tag in tags:
+            if tag in df.columns:
+                return len(df[df[tag]])
+        return 0
+
     def _extract_penalty_corner_stats(self):
         """Extract penalty corner outcomes"""
         pc_att = self.events[
@@ -156,43 +162,17 @@ class Match:
             self.events["EventType"].str.contains("PCD", case=False, na=False)
         ]
 
-        # Helper function to safely count tags
-        def count_tag(df, tag):
-            if tag in df.columns:
-                return len(df[df[tag]])
-            return 0
-
         # PCA stats
         self.stats["pca"] = {
-            "total": len(pc_att),
-            "goal": count_tag(pc_att, "Goal"),
-            "ph2_goal": count_tag(pc_att, "Ph2 Goal"),
-            "reawarded": count_tag(pc_att, "Reawarded"),
-            "saved": count_tag(pc_att, "Saved"),
-            "recycled": count_tag(pc_att, "Recycled"),
-            "miss": count_tag(pc_att, "Miss"),
-            "turnover": count_tag(pc_att, "Turnover"),
-            "left": count_tag(pc_att, "Left"),
-            "right": count_tag(pc_att, "Right"),
-            "straight": count_tag(pc_att, "Straight"),
-            "variation": count_tag(pc_att, "Variation"),
+            key: self.count_tag(pc_att, tags) for key, tags in TAG_NAMES.items()
         }
+        self.stats["pca"]["total"] = len(pc_att)
 
         # PCD stats
         self.stats["pcd"] = {
-            "total": len(pc_def),
-            "goal": count_tag(pc_def, "Goal"),
-            "ph2_goal": count_tag(pc_def, "Ph2 Goal"),
-            "reawarded": count_tag(pc_def, "Reawarded"),
-            "saved": count_tag(pc_def, "Saved"),
-            "recycled": count_tag(pc_def, "Recycled"),
-            "miss": count_tag(pc_def, "Miss"),
-            "turnover": count_tag(pc_def, "Turnover"),
-            "left": count_tag(pc_def, "Left"),
-            "right": count_tag(pc_def, "Right"),
-            "straight": count_tag(pc_def, "Straight"),
-            "variation": count_tag(pc_def, "Variation"),
+            key: self.count_tag(pc_def, tags) for key, tags in TAG_NAMES.items()
         }
+        self.stats["pcd"]["total"] = len(pc_def)
 
     def _extract_circle_entry_stats(self):
         """Extract circle entry outcomes and positions"""
@@ -207,45 +187,17 @@ class Match:
             )
         ]
 
-        # Helper function to safely count tags
-        def count_tag(df, tag):
-            if tag in df.columns:
-                return len(df[df[tag]])
-            return 0
-
         # Circle ATT stats
         self.stats["circle_att"] = {
-            "total": len(circle_att),
-            "goal": count_tag(circle_att, "Goal"),
-            "upgrade": count_tag(circle_att, "Upgrade"),
-            "saved": count_tag(circle_att, "Saved"),
-            "recycled": count_tag(circle_att, "Recycled"),
-            "miss": count_tag(circle_att, "Miss"),
-            "turnover": count_tag(circle_att, "Turnover"),
-            # Positions (left to right: left baseline, l45, central, r45, right baseline)
-            "left_baseline": count_tag(circle_att, "Left Baseline"),
-            "l45": count_tag(circle_att, "L45"),
-            "centre": count_tag(circle_att, "Centre"),
-            "r45": count_tag(circle_att, "R45"),
-            "right_baseline": count_tag(circle_att, "Right Baseline"),
+            key: self.count_tag(circle_att, tags) for key, tags in TAG_NAMES.items()
         }
+        self.stats["circle_att"]["total"] = len(circle_att)
 
         # Circle DEF stats
         self.stats["circle_def"] = {
-            "total": len(circle_def),
-            "goal": count_tag(circle_def, "Goal"),
-            "upgrade": count_tag(circle_def, "Upgrade"),
-            "saved": count_tag(circle_def, "Saved"),
-            "recycled": count_tag(circle_def, "Recycled"),
-            "miss": count_tag(circle_def, "Miss"),
-            "turnover": count_tag(circle_def, "Turnover"),
-            # Positions
-            "left_baseline": count_tag(circle_def, "Left Baseline"),
-            "l45": count_tag(circle_def, "L45"),
-            "centre": count_tag(circle_def, "Centre"),
-            "r45": count_tag(circle_def, "R45"),
-            "right_baseline": count_tag(circle_def, "Right Baseline"),
+            key: self.count_tag(circle_def, tags) for key, tags in TAG_NAMES.items()
         }
+        self.stats["circle_def"]["total"] = len(circle_def)
 
     def _extract_goals(self):
         """Extract goal counts by quarter"""

@@ -130,3 +130,26 @@ BOX_DIMENSIONS = {
     "padding": 0.02,
     "border_radius": "round,pad=0.02",
 }
+
+TAG_NAMES = {
+    # Outcomes
+    "goal": ["Goal"],
+    "ph2_goal": ["Ph2 Goal", "Phase 2 Goal"],
+    "reawarded": ["Reaward"],
+    "saved": ["Saved"],
+    "recycled": ["Recycled"],
+    "miss": ["Miss"],
+    "turnover": ["Turnover"],
+    "upgrade": ["Upgrade"],
+    # Penalty corners
+    "left": ["Left Castle"],
+    "right": ["Right Castle"],
+    "straight": ["Straight", "Straight Flick", "Straight Strike"],
+    "variation": ["Variation"],
+    # Circle entry positions
+    "left_baseline": ["Left Baseline"],
+    "l45": ["L45", "Left"],
+    "centre": ["Centre", "Central"],
+    "r45": ["R45", "Right"],
+    "right_baseline": ["Right Baseline"],
+}
