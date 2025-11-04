@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import to_rgb
 from matplotlib.patches import FancyBboxPatch, Rectangle
 
 from settings import (
@@ -13,6 +14,7 @@ from settings import (
     CIRCLE_WIDTH,
     COLOURS,
     ELEMENT_COORDINATES,
+    EVENT_NAMES,
     FIG_SIZE,
     FONT_SIZES,
     LINE_WIDTHS,
@@ -20,6 +22,28 @@ from settings import (
     PC_WIDTH,
     TITLE_HEIGHT,
 )
+
+
+def interpolate_color(value, min_val, max_val, min_color, max_color):
+    """Interpolate between two colors based on value between min and max"""
+    if max_val == min_val:
+        return min_color
+
+    # Convert hex colors to RGB
+    min_rgb = np.array(to_rgb(min_color))
+    max_rgb = np.array(to_rgb(max_color))
+
+    # Calculate the interpolation factor (0 to 1)
+    factor = (value - min_val) / (max_val - min_val)
+    factor = np.clip(factor, 0, 1)
+
+    # Interpolate
+    interp_rgb = min_rgb + factor * (max_rgb - min_rgb)
+
+    # Convert back to hex
+    return "#{:02x}{:02x}{:02x}".format(
+        int(interp_rgb[0] * 255), int(interp_rgb[1] * 255), int(interp_rgb[2] * 255)
+    )
 
 
 def create_dashboard(match, team_name="Richmond M1", opponent_name="Opponent"):
@@ -339,12 +363,12 @@ def _add_overall_stats(fig, match):
         )
 
 
-def _add_single_quarter_stats_table(fig, match, is_for=True):
+def _add_single_quarter_stats_table(fig, match, side="att"):
     """Add quarter-by-quarter stats tables on left and right sides"""
 
-    if is_for:
+    if side == "att":
         ax = fig.add_axes(ELEMENT_COORDINATES["quarter_stats_for_position"])
-    else:
+    elif side == "def":
         ax = fig.add_axes(ELEMENT_COORDINATES["quarter_stats_against_position"])
 
     ax.set_xlim(0, 4)
@@ -370,72 +394,65 @@ def _add_single_quarter_stats_table(fig, match, is_for=True):
         )
 
     # Event counts by quarter
-    event_labels = [
-        "Own half restarts",
-        "23 entries",
-        "Circle entries",
-        "Penalty corners",
+    events_to_count = [
+        "Own Half Restarts",
+        "23 Entries",
+        "Circle Entries",
+        "Penalty Corners",
     ]
     y_positions = [3.5, 2.5, 1.5, 0.5]
 
-    if is_for:
-        col_str = "ATT"
-        pc_str = "PCA"
-    else:
-        col_str = "DEF"
-        pc_str = "PCD"
-
-    for row_idx, (label, y_pos) in enumerate(zip(event_labels, y_positions)):
+    # First pass: collect all counts
+    counts_by_row = []
+    for row_idx, (label, y_pos) in enumerate(zip(events_to_count, y_positions)):
+        row_counts = []
         for col_idx, q in enumerate(quarters):
             if q in match.stats["quarters"] and not match.stats["quarters"][q].empty:
-                q_events = match.stats["quarters"][q]
-                q_events = q_events[
-                    q_events["EventType"].str.contains(col_str, case=False, na=False)
-                ]
+                quarter_events = match.stats["quarters"][q]
 
                 # Count relevant events
-                if "restart" in label.lower():
-                    count = len(
-                        q_events[
-                            q_events["EventType"].str.contains(
-                                "Own Half Restart", case=False, na=False
-                            )
-                        ]
-                    )
-                elif "23 entries" in label.lower():
-                    count = len(
-                        q_events[
-                            q_events["EventType"].str.contains(
-                                "23 Entry", case=False, na=False
-                            )
-                        ]
-                    )
-                elif "Circle" in label:
-                    count = len(
-                        q_events[
-                            q_events["EventType"].str.contains(
-                                "Circle Entry", case=False, na=False
-                            )
-                        ]
-                    )
-                elif "Penalty" in label:
-                    count = len(
-                        q_events[
-                            q_events["EventType"].str.contains(
-                                pc_str, case=False, na=False
-                            )
-                        ]
-                    )
-                else:
-                    count = 0
+                count = len(
+                    quarter_events[
+                        quarter_events["EventType"].str.contains(
+                            EVENT_NAMES[label][side], case=False, na=False
+                        )
+                    ]
+                )
+
             else:
                 count = 0
+            row_counts.append(count)
+        counts_by_row.append(row_counts)
+
+    # Second pass: draw with conditional formatting
+    for row_idx, (label, y_pos) in enumerate(zip(events_to_count, y_positions)):
+        row_counts = counts_by_row[row_idx]
+
+        # Apply conditional formatting to all rows
+        if len(row_counts) > 0:
+            min_count = min(row_counts)
+            max_count = max(row_counts)
+        else:
+            min_count = max_count = None
+
+        for col_idx, count in enumerate(row_counts):
+            # Determine background color
+            if min_count is not None and max_count is not None:
+                bgcolor = interpolate_color(
+                    count,
+                    min_count,
+                    max_count,
+                    COLOURS["Beige"],
+                    COLOURS["Light green"],
+                )
+            else:
+                bgcolor = COLOURS["White"]
 
             rect = Rectangle(
                 (col_idx, y_pos - 0.5),
                 1,
                 1,
-                facecolor=COLOURS["White"],
+                facecolor=bgcolor,
                 edgecolor=COLOURS["Black"],
                 linewidth=LINE_WIDTHS["thin"],
             )
@@ -454,8 +471,8 @@ def _add_single_quarter_stats_table(fig, match, is_for=True):
 
 def _add_quarter_stats_tables(fig, match):
     """Add quarter stats tables for both FOR and AGAINST"""
-    _add_single_quarter_stats_table(fig, match, is_for=True)
-    _add_single_quarter_stats_table(fig, match, is_for=False)
+    _add_single_quarter_stats_table(fig, match, side="att")
+    _add_single_quarter_stats_table(fig, match, side="def")
 
 
 def _add_pca_pcd(fig, stats):
