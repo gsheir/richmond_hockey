@@ -18,3 +18,13 @@ This repo uses [uv](https://docs.astral.sh/uv/) for package management. Install 
 ```
 uv run main.py
 ```
+
+## Demo mode
+
+There is a demo mode using dummy data to showcase the output. This can be run with 
+
+```
+uv run main.py --demo
+```
+
+![](./demo/output/Manchester_Red_dashboard.png)

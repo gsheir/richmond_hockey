@@ -6,8 +6,9 @@ from settings import EVENT_NAMES, MATCH_DATA_DIR, TAG_NAMES
 
 
 class Match:
-    def __init__(self, json_file: str):
+    def __init__(self, json_file: str, match_data_dir=None):
         self.json_file = json_file
+        self.match_data_dir = match_data_dir
         self.data = None
         self.stats = {}
         self.event_types = None
@@ -17,7 +18,8 @@ class Match:
         return f"Match(json_file={self.json_file})"
 
     def load_data(self):
-        match_path = Path(MATCH_DATA_DIR) / self.json_file
+        data_dir = self.match_data_dir or MATCH_DATA_DIR
+        match_path = Path(data_dir) / self.json_file
         self.data = pd.read_json(match_path)
 
     def extract_events(self):
