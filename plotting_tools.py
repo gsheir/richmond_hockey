@@ -6,24 +6,8 @@ import numpy as np
 from matplotlib.colors import to_rgb
 from matplotlib.patches import FancyBboxPatch, Rectangle
 
-from settings import (
-    BOX_DIMENSIONS,
-    CANVAS_LEFT,
-    CANVAS_RIGHT,
-    CIRCLE_HEIGHT,
-    CIRCLE_WIDTH,
-    COLOURS,
-    ELEMENT_COORDINATES,
-    EVENT_NAMES,
-    FIG_SIZE,
-    FONT_SIZES,
-    LINE_WIDTHS,
-    OVERALL_HEIGHT,
-    OVERALL_WIDTH,
-    PC_HEIGHT,
-    PC_WIDTH,
-    TITLE_HEIGHT,
-)
+from plot_settings import PlotSettings
+from settings import EVENT_NAMES
 
 
 def interpolate_color(value, min_val, max_val, min_color, max_color):
@@ -50,24 +34,40 @@ def interpolate_color(value, min_val, max_val, min_color, max_color):
 
 def create_dashboard(match, team_name="Richmond M1", opponent_name="Opponent"):
     """Create a complete match dashboard"""
+    # Set number of quarters for layout calculations
+    PlotSettings.set_num_quarters(match.num_quarters)
+
     # Create figure with dark red background
-    fig = plt.figure(figsize=FIG_SIZE)
-    fig.patch.set_facecolor(COLOURS["Richmond red"])
+    fig = plt.figure(figsize=PlotSettings.FIG_SIZE)
+    fig.patch.set_facecolor(PlotSettings.COLOURS["Richmond red"])
 
     # Add black title bar at the top
-    title_ax = fig.add_axes([CANVAS_LEFT, 1 - TITLE_HEIGHT, CANVAS_RIGHT, TITLE_HEIGHT])
+    title_ax = fig.add_axes(
+        [
+            PlotSettings.CANVAS_LEFT,
+            1 - PlotSettings.TITLE_HEIGHT,
+            PlotSettings.CANVAS_RIGHT,
+            PlotSettings.TITLE_HEIGHT,
+        ]
+    )
     title_ax.set_xlim(0, 1)
     title_ax.set_ylim(0, 1)
     title_ax.axis("off")
     title_ax.add_patch(
-        Rectangle((0, 0), 1, 1, facecolor=COLOURS["Black"], edgecolor="none")
+        Rectangle(
+            (0, 0),
+            1,
+            1,
+            facecolor=PlotSettings.COLOURS["Black"],
+            edgecolor="none",
+        )
     )
 
     # Add logo
     logo_path = Path("images/richmond_logo.png")
     if logo_path.exists():
         logo_img = mpimg.imread(logo_path)
-        logo_ax = fig.add_axes(ELEMENT_COORDINATES["logo_position"])
+        logo_ax = fig.add_axes(PlotSettings.ELEMENT_COORDINATES["logo_position"])
         logo_ax.imshow(logo_img)
         logo_ax.axis("off")
 
@@ -75,11 +75,11 @@ def create_dashboard(match, team_name="Richmond M1", opponent_name="Opponent"):
     title_text = f"{team_name} vs {opponent_name}"
     fig.text(
         0.5,
-        1 - 0.5 * TITLE_HEIGHT,
+        1 - 0.5 * PlotSettings.TITLE_HEIGHT,
         title_text,
-        fontsize=FONT_SIZES["title"],
+        fontsize=PlotSettings.FONT_SIZES["title"],
         fontweight="bold",
-        color=COLOURS["White"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
     )
@@ -101,7 +101,7 @@ def create_dashboard(match, team_name="Richmond M1", opponent_name="Opponent"):
 
 def _add_result_box(fig, for_score, against_score):
     """Add result box in top left"""
-    ax = fig.add_axes(ELEMENT_COORDINATES["result_position"])
+    ax = fig.add_axes(PlotSettings.ELEMENT_COORDINATES["result_position"])
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
@@ -111,10 +111,10 @@ def _add_result_box(fig, for_score, against_score):
         (0.05, 0.1),
         0.9,
         0.8,
-        boxstyle=BOX_DIMENSIONS["border_radius"],
-        edgecolor=COLOURS["White"],
-        facecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thick"],
+        boxstyle=PlotSettings.BOX_DIMENSIONS["border_radius"],
+        edgecolor=PlotSettings.COLOURS["White"],
+        facecolor=PlotSettings.COLOURS["Black"],
+        linewidth=PlotSettings.LINE_WIDTHS["thick"],
     )
     ax.add_patch(rect)
 
@@ -122,8 +122,8 @@ def _add_result_box(fig, for_score, against_score):
         0.5,
         0.7,
         "RESULT",
-        fontsize=FONT_SIZES["large"],
-        color=COLOURS["White"],
+        fontsize=PlotSettings.FONT_SIZES["large"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
         fontweight="bold",
@@ -132,9 +132,9 @@ def _add_result_box(fig, for_score, against_score):
         0.5,
         0.3,
         f"{for_score} - {against_score}",
-        fontsize=FONT_SIZES["large"],
+        fontsize=PlotSettings.FONT_SIZES["large"],
         fontweight="bold",
-        color=COLOURS["White"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
     )
@@ -142,36 +142,43 @@ def _add_result_box(fig, for_score, against_score):
 
 def _add_period_scores(fig, goals_by_quarter):
     """Add within period scoring table"""
-    ax = fig.add_axes(ELEMENT_COORDINATES["period_scores_position"])
-    ax.set_xlim(0, 4)
+    num_quarters = PlotSettings.NUM_QUARTERS
+    ax = fig.add_axes(PlotSettings.ELEMENT_COORDINATES["period_scores_position"])
+    ax.set_xlim(0, num_quarters)
     ax.set_ylim(0, 3)
     ax.axis("off")
 
     # Black background for title
-    title_rect = Rectangle((0, 1), 4, 2, facecolor=COLOURS["Black"], edgecolor="none")
+    title_rect = Rectangle(
+        (0, 1),
+        num_quarters,
+        2,
+        facecolor=PlotSettings.COLOURS["Black"],
+        edgecolor="none",
+    )
     ax.add_patch(title_rect)
 
     # Title
     ax.text(
-        2,
+        num_quarters / 2,
         2.5,
         "WITHIN PERIOD",
-        fontsize=FONT_SIZES["large"],
-        color=COLOURS["White"],
+        fontsize=PlotSettings.FONT_SIZES["large"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
         fontweight="bold",
     )
 
-    # Headers
-    quarters = ["Q1", "Q2", "Q3", "Q4"]
+    # Headers - dynamically generate quarter list
+    quarters = [f"Q{i + 1}" for i in range(num_quarters)]
     for i, q in enumerate(quarters):
         ax.text(
             i + 0.5,
             1.5,
             q,
-            fontsize=FONT_SIZES["medium"],
-            color=COLOURS["White"],
+            fontsize=PlotSettings.FONT_SIZES["medium"],
+            color=PlotSettings.COLOURS["White"],
             ha="center",
             va="center",
             fontweight="bold",
@@ -183,21 +190,21 @@ def _add_period_scores(fig, goals_by_quarter):
         against_goals = goals_by_quarter["against"].get(q, 0)
         score_text = f"{for_goals} - {against_goals}"
 
-        # Background color - green if winning, white if drawing, red if losing
+        # Background colour - green if winning, white if drawing, red if losing
         if for_goals > against_goals:
-            bgcolor = COLOURS["Light green"]
+            bgcolor = PlotSettings.COLOURS["Light green"]
         elif for_goals == against_goals:
-            bgcolor = COLOURS["White"]
+            bgcolor = PlotSettings.COLOURS["White"]
         else:
-            bgcolor = COLOURS["Light pink"]
+            bgcolor = PlotSettings.COLOURS["Light pink"]
 
         rect = Rectangle(
             (i, 0),
             1,
             1,
             facecolor=bgcolor,
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
+            edgecolor=PlotSettings.COLOURS["Black"],
+            linewidth=PlotSettings.LINE_WIDTHS["thin"],
         )
         ax.add_patch(rect)
 
@@ -205,44 +212,44 @@ def _add_period_scores(fig, goals_by_quarter):
             i + 0.5,
             0.5,
             score_text,
-            fontsize=FONT_SIZES["medium"],
+            fontsize=PlotSettings.FONT_SIZES["medium"],
             fontweight="bold",
-            color=COLOURS["Black"],
+            color=PlotSettings.COLOURS["Black"],
             ha="center",
             va="center",
         )
 
 
 def _add_overall_stats(fig, match):
-    """Add overall stats table in center"""
-    ax = fig.add_axes(ELEMENT_COORDINATES["overall_stats_position"])
-    ax.set_xlim(0, OVERALL_WIDTH)
-    ax.set_ylim(0, OVERALL_HEIGHT)
+    """Add overall stats table in centre"""
+    ax = fig.add_axes(PlotSettings.ELEMENT_COORDINATES["overall_stats_position"])
+    ax.set_xlim(0, PlotSettings.OVERALL_WIDTH)
+    ax.set_ylim(0, PlotSettings.OVERALL_HEIGHT)
     ax.axis("off")
 
     # Black background
     title_rect = Rectangle(
         (0, 0),
-        OVERALL_WIDTH,
-        OVERALL_HEIGHT,
-        facecolor=COLOURS["Black"],
+        PlotSettings.OVERALL_WIDTH,
+        PlotSettings.OVERALL_HEIGHT,
+        facecolor=PlotSettings.COLOURS["Black"],
         edgecolor="none",
     )
     ax.add_patch(title_rect)
 
     ax.text(
-        OVERALL_WIDTH / 2,
-        OVERALL_HEIGHT - 0.5,
+        PlotSettings.OVERALL_WIDTH / 2,
+        PlotSettings.OVERALL_HEIGHT - 0.5,
         "OVERALL STATS",
-        fontsize=FONT_SIZES["large"],
-        color=COLOURS["White"],
+        fontsize=PlotSettings.FONT_SIZES["large"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
         fontweight="bold",
     )
 
     # Stats labels
-    y_start = OVERALL_HEIGHT - 1.5
+    y_start = PlotSettings.OVERALL_HEIGHT - 1.5
     y_step = 1
 
     for i, label in enumerate(EVENT_NAMES.keys()):
@@ -270,18 +277,18 @@ def _add_overall_stats(fig, match):
             (0, y_pos - 0.5),
             1,
             1,
-            facecolor=COLOURS["White"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
+            facecolor=PlotSettings.COLOURS["White"],
+            edgecolor=PlotSettings.COLOURS["Black"],
+            linewidth=PlotSettings.LINE_WIDTHS["thin"],
         )
         ax.add_patch(rect_for)
         ax.text(
             0.5,
             y_pos,
             str(for_count),
-            fontsize=FONT_SIZES["medium"],
+            fontsize=PlotSettings.FONT_SIZES["medium"],
             fontweight="bold",
-            color=COLOURS["Black"],
+            color=PlotSettings.COLOURS["Black"],
             ha="center",
             va="center",
         )
@@ -291,30 +298,30 @@ def _add_overall_stats(fig, match):
             2.5,
             y_pos,
             label,
-            fontsize=FONT_SIZES["medium"],
+            fontsize=PlotSettings.FONT_SIZES["medium"],
             fontweight="bold",
-            color=COLOURS["White"],
+            color=PlotSettings.COLOURS["White"],
             ha="center",
             va="center",
         )
 
         # AGAINST box
         rect_against = Rectangle(
-            (OVERALL_WIDTH - 1, y_pos - 0.5),
+            (PlotSettings.OVERALL_WIDTH - 1, y_pos - 0.5),
             1,
             1,
-            facecolor=COLOURS["White"],
-            edgecolor=COLOURS["Black"],
-            linewidth=LINE_WIDTHS["thin"],
+            facecolor=PlotSettings.COLOURS["White"],
+            edgecolor=PlotSettings.COLOURS["Black"],
+            linewidth=PlotSettings.LINE_WIDTHS["thin"],
         )
         ax.add_patch(rect_against)
         ax.text(
-            OVERALL_WIDTH - 0.5,
+            PlotSettings.OVERALL_WIDTH - 0.5,
             y_pos,
             str(against_count),
-            fontsize=FONT_SIZES["medium"],
+            fontsize=PlotSettings.FONT_SIZES["medium"],
             fontweight="bold",
-            color=COLOURS["Black"],
+            color=PlotSettings.COLOURS["Black"],
             ha="center",
             va="center",
         )
@@ -322,29 +329,40 @@ def _add_overall_stats(fig, match):
 
 def _add_single_quarter_stats_table(fig, match, side="att"):
     """Add quarter-by-quarter stats tables on left and right sides"""
+    num_quarters = PlotSettings.NUM_QUARTERS
 
     if side == "att":
-        ax = fig.add_axes(ELEMENT_COORDINATES["quarter_stats_for_position"])
+        ax = fig.add_axes(
+            PlotSettings.ELEMENT_COORDINATES["quarter_stats_for_position"]
+        )
     elif side == "def":
-        ax = fig.add_axes(ELEMENT_COORDINATES["quarter_stats_against_position"])
+        ax = fig.add_axes(
+            PlotSettings.ELEMENT_COORDINATES["quarter_stats_against_position"]
+        )
 
-    ax.set_xlim(0, 4)
+    ax.set_xlim(0, num_quarters)
     ax.set_ylim(0, 5)
     ax.axis("off")
 
     # Black background for FOR title
-    title_rect = Rectangle((0, 4), 5, 1, facecolor=COLOURS["Black"], edgecolor="none")
+    title_rect = Rectangle(
+        (0, 4),
+        num_quarters,
+        1,
+        facecolor=PlotSettings.COLOURS["Black"],
+        edgecolor="none",
+    )
     ax.add_patch(title_rect)
 
-    # Quarter headers
-    quarters = ["Q1", "Q2", "Q3", "Q4"]
+    # Quarter headers - dynamically generate quarter list
+    quarters = [f"Q{i + 1}" for i in range(num_quarters)]
     for i, q in enumerate(quarters):
         ax.text(
             i + 0.5,
             4.5,
             q,
-            fontsize=FONT_SIZES["small"],
-            color=COLOURS["White"],
+            fontsize=PlotSettings.FONT_SIZES["small"],
+            color=PlotSettings.COLOURS["White"],
             ha="center",
             va="center",
             fontweight="bold",
@@ -393,34 +411,36 @@ def _add_single_quarter_stats_table(fig, match, side="att"):
             min_count = max_count = None
 
         for col_idx, count in enumerate(row_counts):
-            # Determine background color
+            # Determine background colour
             if min_count is not None and max_count is not None:
                 bgcolor = interpolate_color(
                     count,
                     min_count,
                     max_count,
-                    COLOURS["Grey"],
-                    COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+                    PlotSettings.COLOURS["Grey"],
+                    PlotSettings.COLOURS["Light green"]
+                    if side == "att"
+                    else PlotSettings.COLOURS["Light pink"],
                 )
             else:
-                bgcolor = COLOURS["Grey"]
+                bgcolor = PlotSettings.COLOURS["Grey"]
 
             rect = Rectangle(
                 (col_idx, y_pos - 0.5),
                 1,
                 1,
                 facecolor=bgcolor,
-                edgecolor=COLOURS["Black"],
-                linewidth=LINE_WIDTHS["thin"],
+                edgecolor=PlotSettings.COLOURS["Black"],
+                linewidth=PlotSettings.LINE_WIDTHS["thin"],
             )
             ax.add_patch(rect)
             ax.text(
                 col_idx + 0.5,
                 y_pos,
                 str(count),
-                fontsize=FONT_SIZES["medium"],
+                fontsize=PlotSettings.FONT_SIZES["medium"],
                 fontweight="bold",
-                color=COLOURS["Black"],
+                color=PlotSettings.COLOURS["Black"],
                 ha="center",
                 va="center",
             )
@@ -438,7 +458,7 @@ def _add_pca_pcd(fig, stats):
     _add_pc_section(
         fig,
         stats["pca"],
-        ELEMENT_COORDINATES["pca_position"],
+        PlotSettings.ELEMENT_COORDINATES["pca_position"],
         "PCA",
         side="att",
     )
@@ -446,7 +466,7 @@ def _add_pca_pcd(fig, stats):
     _add_pc_section(
         fig,
         stats["pcd"],
-        ELEMENT_COORDINATES["pcd_position"],
+        PlotSettings.ELEMENT_COORDINATES["pcd_position"],
         "PCD",
         side="def",
     )
@@ -460,7 +480,7 @@ def add_box(
     ax,
     width=1,
     height=1,
-    bgcolor=COLOURS["White"],
+    bgcolor=PlotSettings.COLOURS["White"],
 ):
     """Helper function to add a labeled box with value"""
     rect = Rectangle(
@@ -468,17 +488,17 @@ def add_box(
         width,
         height,
         facecolor=bgcolor,
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thin"],
+        edgecolor=PlotSettings.COLOURS["Black"],
+        linewidth=PlotSettings.LINE_WIDTHS["thin"],
     )
     ax.add_patch(rect)
     ax.text(
         x + 0.5 * width,
         y + height,
         label,
-        fontsize=FONT_SIZES["small"],
+        fontsize=PlotSettings.FONT_SIZES["small"],
         fontweight="bold",
-        color=COLOURS["White"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="bottom",
     )
@@ -486,9 +506,9 @@ def add_box(
         x + 0.5 * width,
         y + 0.5 * height,
         str(value),
-        fontsize=FONT_SIZES["medium"],
+        fontsize=PlotSettings.FONT_SIZES["medium"],
         fontweight="bold",
-        color=COLOURS["Black"],
+        color=PlotSettings.COLOURS["Black"],
         ha="center",
         va="center",
     )
@@ -497,51 +517,59 @@ def add_box(
 def _add_pc_section(fig, pc_stats, position, title, side="att"):
     """Add a penalty corner section (PCA or PCD)"""
     ax = fig.add_axes(position)
-    ax.set_xlim(0, PC_WIDTH)
-    ax.set_ylim(0, PC_HEIGHT)
+    ax.set_xlim(0, PlotSettings.PC_WIDTH)
+    ax.set_ylim(0, PlotSettings.PC_HEIGHT)
     ax.axis("off")
 
     # Add pitch image as background
     pitch_path = Path("images/black_tquarter.jpg")
     if pitch_path.exists():
         pitch_img = mpimg.imread(pitch_path)
-        ax.imshow(pitch_img, extent=[0, PC_WIDTH, 0, PC_HEIGHT - 1], aspect="auto")
+        ax.imshow(
+            pitch_img,
+            extent=[0, PlotSettings.PC_WIDTH, 0, PlotSettings.PC_HEIGHT - 1],
+            aspect="auto",
+        )
 
     # Border
     rect = Rectangle(
         (0, 0),
-        PC_WIDTH,
-        PC_HEIGHT,
+        PlotSettings.PC_WIDTH,
+        PlotSettings.PC_HEIGHT,
         facecolor="none",
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thick"],
+        edgecolor=PlotSettings.COLOURS["Black"],
+        linewidth=PlotSettings.LINE_WIDTHS["thick"],
     )
     ax.add_patch(rect)
 
     # Black background for title
     title_rect = Rectangle(
-        (0, PC_HEIGHT - 1), PC_WIDTH, 1, facecolor=COLOURS["Black"], edgecolor="none"
+        (0, PlotSettings.PC_HEIGHT - 1),
+        PlotSettings.PC_WIDTH,
+        1,
+        facecolor=PlotSettings.COLOURS["Black"],
+        edgecolor="none",
     )
     ax.add_patch(title_rect)
 
     # Title
     ax.text(
-        PC_WIDTH / 2,
-        PC_HEIGHT - 0.5,
+        PlotSettings.PC_WIDTH / 2,
+        PlotSettings.PC_HEIGHT - 0.5,
         title,
-        fontsize=FONT_SIZES["medium"],
-        color=COLOURS["White"],
+        fontsize=PlotSettings.FONT_SIZES["medium"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
         fontweight="bold",
     )
 
     # Preset 3 and 4 column x positions
-    col_4_x = np.linspace(0.2, PC_WIDTH - 1.2, 4)
-    col_3_x = np.linspace(0.5, PC_WIDTH - 1.2, 3)
+    col_4_x = np.linspace(0.2, PlotSettings.PC_WIDTH - 1.2, 4)
+    col_3_x = np.linspace(0.5, PlotSettings.PC_WIDTH - 1.2, 3)
 
     # Preset 3 row y positions
-    row_3_y = np.linspace(PC_HEIGHT - 2.5, 1, 3)
+    row_3_y = np.linspace(PlotSettings.PC_HEIGHT - 2.5, 1, 3)
 
     # Top row: Goal, Ph2 Goal, Reawarded
     goal = pc_stats["goal"]
@@ -573,8 +601,10 @@ def _add_pc_section(fig, pc_stats, position, title, side="att"):
             value,
             min_group1,
             max_group1,
-            COLOURS["Grey"],
-            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+            PlotSettings.COLOURS["Grey"],
+            PlotSettings.COLOURS["Light green"]
+            if side == "att"
+            else PlotSettings.COLOURS["Light pink"],
         )
         add_box(
             x,
@@ -595,16 +625,20 @@ def _add_pc_section(fig, pc_stats, position, title, side="att"):
                 value,
                 min_group1,
                 max_group1,
-                COLOURS["Grey"],
-                COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+                PlotSettings.COLOURS["Grey"],
+                PlotSettings.COLOURS["Light green"]
+                if side == "att"
+                else PlotSettings.COLOURS["Light pink"],
             )
         else:
             bgcolor = interpolate_color(
                 value,
                 min_group2,
                 max_group2,
-                COLOURS["Grey"],
-                COLOURS["Light pink"] if side == "att" else COLOURS["Light green"],
+                PlotSettings.COLOURS["Grey"],
+                PlotSettings.COLOURS["Light pink"]
+                if side == "att"
+                else PlotSettings.COLOURS["Light green"],
             )
 
         add_box(
@@ -635,8 +669,10 @@ def _add_pc_section(fig, pc_stats, position, title, side="att"):
             value,
             min_group3,
             max_group3,
-            COLOURS["Grey"],
-            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+            PlotSettings.COLOURS["Grey"],
+            PlotSettings.COLOURS["Light green"]
+            if side == "att"
+            else PlotSettings.COLOURS["Light pink"],
         )
         add_box(
             x,
@@ -651,9 +687,9 @@ def _add_pc_section(fig, pc_stats, position, title, side="att"):
         np.mean(col_4_x[:2]) + 0.5,
         0.2,
         "CASTLE",
-        fontsize=FONT_SIZES["small"],
+        fontsize=PlotSettings.FONT_SIZES["small"],
         fontweight="bold",
-        color=COLOURS["White"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="bottom",
     )
@@ -662,9 +698,9 @@ def _add_pc_section(fig, pc_stats, position, title, side="att"):
         np.mean(col_4_x[2:]) + 0.5,
         0.2,
         "ROUTINE",
-        fontsize=FONT_SIZES["small"],
+        fontsize=PlotSettings.FONT_SIZES["small"],
         fontweight="bold",
-        color=COLOURS["White"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="bottom",
     )
@@ -676,7 +712,7 @@ def _add_circle_entries(fig, stats):
     _add_circle_section(
         fig,
         stats["circle_att"],
-        ELEMENT_COORDINATES["circle_att_position"],
+        PlotSettings.ELEMENT_COORDINATES["circle_att_position"],
         "CIRCLE ATT",
         side="att",
     )
@@ -684,7 +720,7 @@ def _add_circle_entries(fig, stats):
     _add_circle_section(
         fig,
         stats["circle_def"],
-        ELEMENT_COORDINATES["circle_def_position"],
+        PlotSettings.ELEMENT_COORDINATES["circle_def_position"],
         "CIRCLE DEF",
         side="def",
     )
@@ -693,8 +729,8 @@ def _add_circle_entries(fig, stats):
 def _add_circle_section(fig, circle_stats, position, title, side="att"):
     """Add a circle entry section (ATT or DEF)"""
     ax = fig.add_axes(position)
-    ax.set_xlim(0, CIRCLE_WIDTH)
-    ax.set_ylim(0, CIRCLE_HEIGHT)
+    ax.set_xlim(0, PlotSettings.CIRCLE_WIDTH)
+    ax.set_ylim(0, PlotSettings.CIRCLE_HEIGHT)
     ax.axis("off")
 
     # Add pitch image as background
@@ -703,38 +739,38 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
         pitch_img = mpimg.imread(pitch_path)
         ax.imshow(
             pitch_img,
-            extent=[0, CIRCLE_WIDTH, 0, CIRCLE_HEIGHT - 1],
+            extent=[0, PlotSettings.CIRCLE_WIDTH, 0, PlotSettings.CIRCLE_HEIGHT - 1],
             aspect="auto",
         )
 
     # Border
     rect = Rectangle(
         (0, 0),
-        CIRCLE_WIDTH,
-        CIRCLE_HEIGHT,
+        PlotSettings.CIRCLE_WIDTH,
+        PlotSettings.CIRCLE_HEIGHT,
         facecolor="none",
-        edgecolor=COLOURS["Black"],
-        linewidth=LINE_WIDTHS["thick"],
+        edgecolor=PlotSettings.COLOURS["Black"],
+        linewidth=PlotSettings.LINE_WIDTHS["thick"],
     )
     ax.add_patch(rect)
 
     # Black background for title
     title_rect = Rectangle(
-        (0, CIRCLE_HEIGHT - 1),
-        CIRCLE_WIDTH,
+        (0, PlotSettings.CIRCLE_HEIGHT - 1),
+        PlotSettings.CIRCLE_WIDTH,
         1,
-        facecolor=COLOURS["Black"],
+        facecolor=PlotSettings.COLOURS["Black"],
         edgecolor="none",
     )
     ax.add_patch(title_rect)
 
     # Title
     ax.text(
-        CIRCLE_WIDTH / 2,
-        CIRCLE_HEIGHT - 0.5,
+        PlotSettings.CIRCLE_WIDTH / 2,
+        PlotSettings.CIRCLE_HEIGHT - 0.5,
         title,
-        fontsize=FONT_SIZES["medium"],
-        color=COLOURS["White"],
+        fontsize=PlotSettings.FONT_SIZES["medium"],
+        color=PlotSettings.COLOURS["White"],
         ha="center",
         va="center",
         fontweight="bold",
@@ -754,10 +790,16 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
     max_position = max(position_values)
 
     # Draw simplified circle representation
-    y_circle = CIRCLE_HEIGHT - 3
+    y_circle = PlotSettings.CIRCLE_HEIGHT - 3
 
     # Arc positions
-    arc_x = [1, 1.4, CIRCLE_WIDTH / 2 - 0.5, CIRCLE_WIDTH - 2.4, CIRCLE_WIDTH - 2]
+    arc_x = [
+        1,
+        1.4,
+        PlotSettings.CIRCLE_WIDTH / 2 - 0.5,
+        PlotSettings.CIRCLE_WIDTH - 2.4,
+        PlotSettings.CIRCLE_WIDTH - 2,
+    ]
     arc_y = [y_circle, y_circle - 1.2, y_circle - 1.5, y_circle - 1.2, y_circle]
 
     # Top boxes with conditional formatting
@@ -768,8 +810,10 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
             value,
             min_position,
             max_position,
-            COLOURS["Grey"],
-            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+            PlotSettings.COLOURS["Grey"],
+            PlotSettings.COLOURS["Light green"]
+            if side == "att"
+            else PlotSettings.COLOURS["Light pink"],
         )
         add_box(
             x,
@@ -786,8 +830,10 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
             value,
             min_position,
             max_position,
-            COLOURS["Grey"],
-            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+            PlotSettings.COLOURS["Grey"],
+            PlotSettings.COLOURS["Light green"]
+            if side == "att"
+            else PlotSettings.COLOURS["Light pink"],
         )
         add_box(
             x,
@@ -803,8 +849,10 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
         centre,
         min_position,
         max_position,
-        COLOURS["Grey"],
-        COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+        PlotSettings.COLOURS["Grey"],
+        PlotSettings.COLOURS["Light green"]
+        if side == "att"
+        else PlotSettings.COLOURS["Light pink"],
     )
     add_box(
         arc_x[2],
@@ -817,7 +865,7 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
 
     # Bottom stats boxes
     row_y = np.linspace(3, 1, 2)
-    row_x = np.linspace(0.5, CIRCLE_WIDTH - 1.5, 4)
+    row_x = np.linspace(0.5, PlotSettings.CIRCLE_WIDTH - 1.5, 4)
 
     # 1st row: Goal, Upgrade, Saved, Recycled
     goal = circle_stats["goal"]
@@ -838,8 +886,10 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
             value,
             min_val_row1,
             max_val_row1,
-            COLOURS["Grey"],
-            COLOURS["Light green"] if side == "att" else COLOURS["Light pink"],
+            PlotSettings.COLOURS["Grey"],
+            PlotSettings.COLOURS["Light green"]
+            if side == "att"
+            else PlotSettings.COLOURS["Light pink"],
         )
 
         add_box(
@@ -863,15 +913,19 @@ def _add_circle_section(fig, circle_stats, position, title, side="att"):
     max_val_row2 = max(values2)
 
     for label, value, x in zip(
-        labels2, values2, [CIRCLE_WIDTH / 2 - 1.5, CIRCLE_WIDTH / 2 + 0.5]
+        labels2,
+        values2,
+        [PlotSettings.CIRCLE_WIDTH / 2 - 1.5, PlotSettings.CIRCLE_WIDTH / 2 + 0.5],
     ):
         # Conditional formatting
         bgcolor = interpolate_color(
             value,
             min_val_row2,
             max_val_row2,
-            COLOURS["Grey"],
-            COLOURS["Light pink"] if side == "att" else COLOURS["Light green"],
+            PlotSettings.COLOURS["Grey"],
+            PlotSettings.COLOURS["Light pink"]
+            if side == "att"
+            else PlotSettings.COLOURS["Light green"],
         )
 
         add_box(

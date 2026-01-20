@@ -86,19 +86,18 @@ class Match:
         ].sort_values("StartTimeMs")
 
         self.stats["quarters"] = {}
+        self.num_quarters = len(quarter_events)
 
-        if len(quarter_events) != 4:
-            # Quarter markers invalid, treat all as Q1
+        # If no quarter events found, assign all events to Q1
+        if self.num_quarters == 0:
+            self.num_quarters = 1
             self.stats["quarters"]["Q1"] = self.events
-            self.stats["quarters"]["Q2"] = pd.DataFrame()
-            self.stats["quarters"]["Q3"] = pd.DataFrame()
-            self.stats["quarters"]["Q4"] = pd.DataFrame()
             return
 
         quarter_times = quarter_events["StartTimeMs"].tolist()
 
-        # Q1, Q2, Q3: between quarter starts
-        for i in range(0, 3):
+        # All quarters except last: between quarter starts
+        for i in range(0, self.num_quarters - 1):
             start_time = quarter_times[i]
             end_time = quarter_times[i + 1]
             quarter_events_df = self.events[
@@ -107,14 +106,14 @@ class Match:
             ]
             self.stats["quarters"][f"Q{i + 1}"] = quarter_events_df
 
-        # Q4: from last quarter start to end
-        start_time = quarter_times[3]
+        # Last quarter: from last quarter start to end
+        start_time = quarter_times[self.num_quarters - 1]
         end_time = self.events["StartTimeMs"].max()
         quarter_events_df = self.events[
             (self.events["StartTimeMs"] >= start_time)
             & (self.events["StartTimeMs"] < end_time)
         ]
-        self.stats["quarters"]["Q4"] = quarter_events_df
+        self.stats["quarters"][f"Q{self.num_quarters}"] = quarter_events_df
 
     def _extract_for_against_stats(self):
         """Separate events into FOR (ATT) and AGAINST (DEF) based on event type"""
@@ -133,7 +132,7 @@ class Match:
         self.stats["for_by_quarter"] = {}
         self.stats["against_by_quarter"] = {}
 
-        for quarter in ["Q1", "Q2", "Q3", "Q4"]:
+        for quarter in [f"Q{i + 1}" for i in range(self.num_quarters)]:
             if (
                 quarter in self.stats["quarters"]
                 and not self.stats["quarters"][quarter].empty

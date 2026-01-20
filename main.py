@@ -23,6 +23,7 @@ def load_data(match_data_dir=None, match_index=None):
         if row["Coded?"] != "Yes":
             continue
 
+        print(f"Processing: {row['Name']} ({row['JSON file name']})")
         match = Match(row["JSON file name"], match_data_dir=data_dir)
         match.load_data()
         match.extract_events()
